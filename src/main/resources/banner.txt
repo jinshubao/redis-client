@@ -1,0 +1,8 @@
+
+ --------------------------------------------
+ ----------------redis client----------------
+ --------------------------------------------
+
+ application${application.formatted-version}
+ SpringBoot${spring-boot.formatted-version}
+

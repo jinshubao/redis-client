@@ -1,0 +1,48 @@
+group 'com.jean'
+version '1.0'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'spring-boot'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+buildscript {
+    ext {
+        springBootVersion = '1.4.2.RELEASE'
+    }
+    repositories {
+        mavenLocal()
+        maven { url "http://10.52.2.106:8081/repository/maven-public/" }
+    }
+
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+[compileJava, compileTestJava]*.options*.encoding = "UTF-8"
+
+repositories {
+    maven {
+        url "http://10.52.2.106:8081/repository/maven-public/"
+    }
+}
+
+dependencies {
+    compile(
+            "org.springframework.boot:spring-boot-starter-redis:${springBootVersion}",
+            "org.springframework:spring-beans",
+            "ch.qos.logback:logback-access",
+            "ch.qos.logback:logback-classic"
+    )
+
+    testCompile(
+            "junit:junit:4.12",
+            "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    )
+}

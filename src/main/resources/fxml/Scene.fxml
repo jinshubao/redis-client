@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="700.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.91" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.jean.redisClient.controller.MainController">
+   <top>
+      <VBox>
+         <children>
+            <MenuBar BorderPane.alignment="CENTER">
+              <menus>
+                <Menu mnemonicParsing="false" text="文件">
+                  <items>
+                        <Menu mnemonicParsing="false" text="新建连接">
+                          <items>
+                            <MenuItem mnemonicParsing="false" text="MongoDB" />
+                              <MenuItem mnemonicParsing="false" text="MySQL" />
+                          </items>
+                        </Menu>
+                    <MenuItem mnemonicParsing="false" text="打开连接" />
+                        <MenuItem mnemonicParsing="false" text="关闭连接" />
+                        <MenuItem mnemonicParsing="false" text="导出连接..." />
+                        <MenuItem mnemonicParsing="false" text="导入连接..." />
+                        <MenuItem mnemonicParsing="false" text="关闭" />
+                        <MenuItem mnemonicParsing="false" text="退出" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="查看">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Delete" />
+                  </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="收藏夹">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="About" />
+                  </items>
+                </Menu>
+                  <Menu mnemonicParsing="false" text="工具">
+                     <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                     </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" text="窗口">
+                     <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                     </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" text="帮助">
+                     <items>
+                        <MenuItem mnemonicParsing="false" text="About" />
+                     </items>
+                  </Menu>
+              </menus>
+            </MenuBar>
+            <HBox alignment="CENTER_LEFT" maxHeight="40.0" minHeight="40.0" prefHeight="40.0" spacing="10.0" style="-fx-border-color: #999;" VBox.vgrow="NEVER">
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+               <children>
+                  <TextField fx:id="keyword" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="search" mnemonicParsing="false" text="搜索" />
+               </children></HBox>
+         </children>
+      </VBox>
+   </top>
+   <bottom>
+      <HBox maxHeight="30.0" minHeight="30.0" prefHeight="30.0" style="-fx-border-color: #999;" BorderPane.alignment="CENTER_LEFT" />
+   </bottom>
+   <center>
+      <SplitPane fx:id="splitPane" dividerPositions="0.2" nodeOrientation="LEFT_TO_RIGHT" BorderPane.alignment="CENTER">
+        <items>
+            <TreeView fx:id="dbTreeview" layoutY="30.0" />
+            <VBox fx:id="dataList" layoutX="111.0" layoutY="-8.0">
+               <children>
+                  <ListView fx:id="list" VBox.vgrow="ALWAYS" />
+               </children></VBox>
+        </items>
+      </SplitPane>
+   </center>
+</BorderPane>

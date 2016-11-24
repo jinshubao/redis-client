@@ -1,0 +1,8 @@
+spring:
+  redis:
+#    host: 127.0.0.1
+#    port: 6379
+#    password:
+    host: 10.52.2.170
+    port: 6380
+    password: 90-=op[]
