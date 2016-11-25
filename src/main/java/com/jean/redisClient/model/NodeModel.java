@@ -7,8 +7,21 @@ import java.util.List;
  */
 public class NodeModel extends BaseModel {
 
+    public NodeModel() {
+    }
+
+    public NodeModel(String nodeName) {
+        this.nodeName = nodeName;
+    }
+
+    public NodeModel(String nodeName, List<NodeModel> nodeModels, List<BaseModel> models) {
+        this.nodeName = nodeName;
+        this.nodeModels = nodeModels;
+        this.models = models;
+    }
+
     private String nodeName;
-    private NodeModel nodeModel;
+    private List<NodeModel> nodeModels;
     private List<BaseModel> models;
 
     public String getNodeName() {
@@ -19,12 +32,12 @@ public class NodeModel extends BaseModel {
         this.nodeName = nodeName;
     }
 
-    public NodeModel getNodeModel() {
-        return nodeModel;
+    public List<NodeModel> getNodeModels() {
+        return nodeModels;
     }
 
-    public void setNodeModel(NodeModel nodeModel) {
-        this.nodeModel = nodeModel;
+    public void setNodeModels(List<NodeModel> nodeModels) {
+        this.nodeModels = nodeModels;
     }
 
     public List<BaseModel> getModels() {
@@ -33,5 +46,10 @@ public class NodeModel extends BaseModel {
 
     public void setModels(List<BaseModel> models) {
         this.models = models;
+    }
+
+    @Override
+    public String toString() {
+        return nodeName;
     }
 }

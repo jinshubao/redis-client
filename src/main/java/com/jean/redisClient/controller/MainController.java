@@ -1,7 +1,9 @@
 package com.jean.redisClient.controller;
 
+import com.jean.redisClient.Service.DelService;
 import com.jean.redisClient.Service.DetailService;
 import com.jean.redisClient.Service.ListService;
+import com.jean.redisClient.factory.DataCellFactory;
 import com.jean.redisClient.model.BaseModel;
 import com.jean.redisClient.model.DetailModel;
 import com.jean.redisClient.model.NodeModel;
@@ -42,6 +44,12 @@ public class MainController implements Initializable {
     @Autowired
     private DetailService detailService;
 
+    @Autowired
+    DataCellFactory dataCellFactory;
+
+    @Autowired
+    DelService delService;
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -57,6 +65,8 @@ public class MainController implements Initializable {
         ((TableColumn<BaseModel, Long>) table.getColumns().get(2)).setCellValueFactory(param -> {
             return new SimpleObjectProperty<>(param.getValue().getSize());
         });
+
+        table.getColumns().get(0).setCellFactory(dataCellFactory);
 
         search.setOnAction(event -> {
             table.getItems().clear();
@@ -92,9 +102,28 @@ public class MainController implements Initializable {
                 list.getItems().add("size : " + detail.getSize());
             }
         });
-    }
 
-    private void createTree(List<BaseModel> list) {
-        tree.setRoot(new TreeItem<>(new NodeModel()));
+        delService.setOnSucceeded(event -> {
+            BaseModel item = (BaseModel) delService.getValue();
+            if (item != null) {
+                table.getItems().remove(item);
+            }
+        });
+
+        TreeItem<NodeModel> root = new TreeItem<>(new NodeModel("服务器列表"));
+
+        tree.setRoot(root);
+        tree.getRoot().setExpanded(true);
+
+        TreeItem<NodeModel> localhost = new TreeItem<>(new NodeModel("localhost"));
+        TreeItem<NodeModel> dev = new TreeItem<>(new NodeModel("dev"));
+
+        TreeItem<NodeModel> test = new TreeItem<>(new NodeModel("test"));
+        tree.getRoot().getChildren().addAll(localhost, dev, test);
+        tree.getRoot().getChildren().forEach(node -> {
+            for (int i = 0; i < 16; i++) {
+                node.getChildren().add(new TreeItem<>(new NodeModel("db" + i)));
+            }
+        });
     }
 }

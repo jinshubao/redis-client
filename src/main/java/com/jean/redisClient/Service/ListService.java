@@ -35,6 +35,7 @@ public class ListService extends BaseService<List<BaseModel>> {
                         result.add(listModel);
                     });
                 }
+                redisTemplate.boundValueOps("test").set("testsetstset");
                 return result;
             }
         };

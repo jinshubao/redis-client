@@ -27,6 +27,10 @@ public abstract class BaseService<V> extends Service {
         this.params.putAll(params);
     }
 
+    public void addParams(String key, Object value) {
+        this.params.put(key, value);
+    }
+
     public void clearParams() {
         if (!isRunning()) {
             params.clear();
@@ -35,5 +39,12 @@ public abstract class BaseService<V> extends Service {
 
     protected void printCurrentThreadName() {
         System.out.println(Thread.currentThread().getName());
+    }
+
+    @Override
+    public void restart() {
+        if (!isRunning()) {
+            super.restart();
+        }
     }
 }
