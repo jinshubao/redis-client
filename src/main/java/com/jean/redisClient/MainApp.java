@@ -2,7 +2,6 @@ package com.jean.redisClient;
 
 import javafx.application.Application;
 import javafx.application.Preloader;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -10,13 +9,12 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-import javafx.util.Callback;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.function.Consumer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @SpringBootApplication
 public class MainApp extends Application {
@@ -36,36 +34,24 @@ public class MainApp extends Application {
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_START));
 
         FXMLLoader loader = new FXMLLoader();
-        loader.setControllerFactory(new Callback<Class<?>, Object>() {
-
-            @Override
-            public Object call(Class<?> param) {
-                return applicationContext.getBean(param);
-            }
-        });
+        loader.setControllerFactory(param -> applicationContext.getBean(param));
         Parent root = loader.load(getClass().getResourceAsStream("/fxml/Scene.fxml"));
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
-        stage.getIcons().add(new Image(getClass().getResourceAsStream("/image/mongodb-logo.png")));
+        stage.setTitle("redis client - v1.0");
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/image/dbs_redis_48px_.png")));
         stage.setScene(scene);
         stage.show();
-        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-
-            @Override
-            public void handle(WindowEvent event) {
-                Dialog<ButtonType> dialog = new Dialog<>();
-                dialog.setContentText("\r\n\t是否退出？\r\n");
-                dialog.setTitle("退出提示");
-                dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-                dialog.showAndWait().ifPresent(new Consumer<ButtonType>() {
-                    @Override
-                    public void accept(ButtonType buttonType) {
-                        if (buttonType != ButtonType.OK) {
-                            event.consume();
-                        }
-                    }
-                });
-            }
+        stage.setOnCloseRequest(event -> {
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setTitle("退出提示");
+            dialog.setContentText("\r\n\t确定退出？\r\n");
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+            dialog.showAndWait().ifPresent(buttonType -> {
+                if (buttonType != ButtonType.OK) {
+                    event.consume();
+                }
+            });
         });
     }
 
