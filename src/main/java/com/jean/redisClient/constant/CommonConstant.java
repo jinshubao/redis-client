@@ -5,5 +5,11 @@ package com.jean.redisClient.constant;
  */
 public class CommonConstant {
 
+    public static String REDIS_TYPE_STRING = "string";
+    public static String REDIS_TYPE_LIST = "detail";
+    public static String REDIS_TYPE_SET = "set";
+    public static String REDIS_TYPE_HASH = "hash";
+    public static String REDIS_TYPE_NONE = "none";
+    public static String REDIS_TYPE_ZSET= "zset";
 
 }

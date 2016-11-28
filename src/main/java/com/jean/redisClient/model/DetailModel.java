@@ -1,7 +1,6 @@
 package com.jean.redisClient.model;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import java.util.Collection;
 
 /**
  * Created by jinshubao on 2016/11/25.
@@ -11,23 +10,29 @@ public class DetailModel extends BaseModel {
     public DetailModel() {
     }
 
+    Long ttl;
+
     public DetailModel(BaseModel baseModel) {
         this.setKey(baseModel.getKey());
         this.setType(baseModel.getType());
         this.setSize(baseModel.getSize());
     }
 
-    private StringProperty value = new SimpleStringProperty();
+    private Collection<String> values;
 
-    public void setValue(String value) {
-        this.value.set(value);
+    public Collection<String> getValues() {
+        return values;
     }
 
-    public String getValue() {
-        return value.get();
+    public void setValues(Collection<String> values) {
+        this.values = values;
     }
 
-    public StringProperty valueProperty() {
-        return value;
+    public Long getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(Long ttl) {
+        this.ttl = ttl;
     }
 }

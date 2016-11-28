@@ -3,10 +3,12 @@ package com.jean.redisClient.controller;
 import com.jean.redisClient.Service.DelService;
 import com.jean.redisClient.Service.DetailService;
 import com.jean.redisClient.Service.ListService;
-import com.jean.redisClient.factory.DataCellFactory;
-import com.jean.redisClient.model.BaseModel;
-import com.jean.redisClient.model.DetailModel;
-import com.jean.redisClient.model.NodeModel;
+import com.jean.redisClient.factory.ListCellFactory;
+import com.jean.redisClient.factory.TableCellFactory;
+import com.jean.redisClient.factory.TreeCellFactory;
+import com.jean.redisClient.model.*;
+import com.jean.redisClient.utils.Utils;
+import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 @Controller
+@SuppressWarnings("unchecked")
 public class MainController implements Initializable {
 
     @FXML
@@ -28,13 +31,15 @@ public class MainController implements Initializable {
     @FXML
     public Button search;
     @FXML
-    public ListView<String> list;
+    public ListView<String> detail;
     @FXML
     public TreeView<NodeModel> tree;
     @FXML
     public TableView<BaseModel> table;
     @FXML
     public ProgressIndicator progress;
+    @FXML
+    public Label message;
     @FXML
     private SplitPane splitPane;
 
@@ -45,63 +50,78 @@ public class MainController implements Initializable {
     private DetailService detailService;
 
     @Autowired
-    DataCellFactory dataCellFactory;
+    private TableCellFactory tableCellFactory;
 
     @Autowired
-    DelService delService;
+    private ListCellFactory listCellFactory;
 
+    @Autowired
+    private TreeCellFactory treeCellFactory;
+
+    @Autowired
+    private DelService delService;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         progress.visibleProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
+
         search.disableProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
-
-        ((TableColumn<BaseModel, String>) table.getColumns().get(0)).setCellValueFactory(param -> {
-            return param.getValue().keyProperty();
-        });
-        ((TableColumn<BaseModel, String>) table.getColumns().get(1)).setCellValueFactory(param -> {
-            return param.getValue().typeProperty();
-        });
-        ((TableColumn<BaseModel, Long>) table.getColumns().get(2)).setCellValueFactory(param -> {
-            return new SimpleObjectProperty<>(param.getValue().getSize());
-        });
-
-        table.getColumns().get(0).setCellFactory(dataCellFactory);
-
         search.setOnAction(event -> {
-            table.getItems().clear();
-            listService.clearParams();
             Map<String, Object> params = new HashMap<>();
             params.put("cmd", keyword.getText());
             listService.setParams(params);
             listService.restart();
         });
 
+        tree.setCellFactory(treeCellFactory);
+        tree.setRoot(new TreeItem<>(new RootModel("服务器列表")));
+        tree.getRoot().setExpanded(true);
+        TreeItem<NodeModel> localhost = new TreeItem<>(new HostModel("localhost", 6379));
+        TreeItem<NodeModel> dev = new TreeItem<>(new HostModel("10.52.2.170", 6380, "90-=op[]"));
+        TreeItem<NodeModel> test = new TreeItem<>(new HostModel("10.52.2.170", 6379, "90-=op[]"));
+        tree.getRoot().getChildren().addAll(localhost, dev, test);
+        tree.getRoot().getChildren().forEach(node -> node.getChildren().addAll(Utils.getDbItems((HostModel) node.getValue())));
+
+        tree.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) {
+                return;
+            }
+            System.out.println(newValue.toString());
+            if (newValue.getValue() instanceof HostModel || newValue.getValue() instanceof DbModel) {
+                //切换连接
+                dbChange();
+                listService.addParams("cmd", "*");
+                listService.restart();
+            }
+        });
+
+        table.getColumns().get(0).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getKey()));
+        table.getColumns().get(1).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getType()));
+        table.getColumns().get(2).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getSize()));
+        table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            detailService.addParams("item", newValue);
+            detailService.restart();
+        });
+        table.getColumns().get(0).setCellFactory(tableCellFactory);
+
+        detail.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        detail.setCellFactory(listCellFactory);
+
+        listService.setOnRunning(event -> table.getItems().clear());
         listService.setOnSucceeded(event -> {
             List<BaseModel> list = (List<BaseModel>) listService.getValue();
             table.getItems().addAll(list);
             //生成树形结构
         });
 
-        table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            list.getItems().clear();
-            detailService.clearParams();
-            Map<String, Object> params = new HashMap<>();
-            params.put("model", newValue);
-            detailService.setParams(params);
-            detailService.restart();
-        });
-
         detailService.setOnSucceeded(event -> {
-            list.getItems().clear();
             DetailModel detail = (DetailModel) detailService.getValue();
             if (detail != null) {
-                list.getItems().add("key  : " + detail.getKey());
-                list.getItems().add("value: " + detail.getValue());
-                list.getItems().add("type : " + detail.getType());
-                list.getItems().add("size : " + detail.getSize());
+                this.detail.getItems().add("key : " + detail.getKey() + "\ttype : " + detail.getType() + "\tsize : " + detail.getSize() + "\tttl : " + detail.getTtl() + " s");
+                detail.getValues().forEach(item -> this.detail.getItems().add(item));
             }
         });
+        detailService.setOnRunning(event -> detail.getItems().clear());
 
         delService.setOnSucceeded(event -> {
             BaseModel item = (BaseModel) delService.getValue();
@@ -109,21 +129,21 @@ public class MainController implements Initializable {
                 table.getItems().remove(item);
             }
         });
+    }
 
-        TreeItem<NodeModel> root = new TreeItem<>(new NodeModel("服务器列表"));
-
-        tree.setRoot(root);
-        tree.getRoot().setExpanded(true);
-
-        TreeItem<NodeModel> localhost = new TreeItem<>(new NodeModel("localhost"));
-        TreeItem<NodeModel> dev = new TreeItem<>(new NodeModel("dev"));
-
-        TreeItem<NodeModel> test = new TreeItem<>(new NodeModel("test"));
-        tree.getRoot().getChildren().addAll(localhost, dev, test);
-        tree.getRoot().getChildren().forEach(node -> {
-            for (int i = 0; i < 16; i++) {
-                node.getChildren().add(new TreeItem<>(new NodeModel("db" + i)));
+    private void dbChange() {
+        DbModel dbModel = null;
+        TreeItem<NodeModel> selectedItem = tree.getSelectionModel().getSelectedItem();
+        if (selectedItem != null) {
+            NodeModel value = selectedItem.getValue();
+            if (value instanceof HostModel) {
+                dbModel = new DbModel((HostModel) value, 0);
+            } else if (value instanceof DbModel) {
+                dbModel = (DbModel) value;
             }
-        });
+        }
+        listService.setDbModel(dbModel);
+        detailService.setDbModel(dbModel);
+        delService.setDbModel(dbModel);
     }
 }

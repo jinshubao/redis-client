@@ -9,16 +9,14 @@
 	</appender>
 
 	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>target/tmp/log.txt</file>
+		<file>logs/log.txt</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>target/tmp/log.%d{yyyy-MM-dd}.%i.txt.zip</fileNamePattern>
+			<fileNamePattern>logs/log.%d{yyyy-MM-dd}.%i.txt.zip</fileNamePattern>
       		<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
 				<maxFileSize>20MB</maxFileSize>
 			</timeBasedFileNamingAndTriggeringPolicy>
 		</rollingPolicy>
-        
-        
-	    <encoder>  
+	    <encoder>
 	      <pattern>%date %level [%thread] %logger{36} [%file : %line] %msg%n</pattern>  
 	    </encoder>
 	</appender>

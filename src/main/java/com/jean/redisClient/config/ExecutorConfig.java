@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
  * Created by jinshubao on 2016/11/25.
  */
 @Configuration
-public class Config {
+public class ExecutorConfig {
 
     @Bean
     Executor executor() {
