@@ -8,15 +8,22 @@ import com.jean.redisClient.factory.ListCellFactory;
 import com.jean.redisClient.factory.TableCellFactory;
 import com.jean.redisClient.factory.TreeCellFactory;
 import com.jean.redisClient.model.*;
+import com.jean.redisClient.utils.TreeItemUtils;
+import com.jean.redisClient.utils.YamlUtils;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
+import java.io.FileNotFoundException;
 import java.net.URL;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 @Controller
 @SuppressWarnings("unchecked")
@@ -131,10 +138,12 @@ public class MainController implements Initializable {
         });
 
         //读配置文件
-        List<HostModel> hostModels = new ArrayList<>();
-
-        hostModels.forEach(hostModel ->
-                tree.getRoot().getChildren().add(new TreeItem<>(new HostModel(hostModel.getHostName(), hostModel.getPort(), hostModel.getAuth()))));
+        Map config = initConfig(CommonConstant.CONFIG_FILE_NAME);
+        config.forEach((key, m) -> {
+            Map map = (Map) m;
+            HostModel hostModel = new HostModel(map.get("hostName").toString(), Integer.parseInt(map.get("port").toString()), map.get("auth").toString());
+            tree.getRoot().getChildren().add(TreeItemUtils.createHostTreeItem(hostModel));
+        });
     }
 
     /**
@@ -155,8 +164,28 @@ public class MainController implements Initializable {
     }
 
     //主程序退出回调
-    public void close() {
-        //
-        System.out.println("退出了。。。。");
+    public void close() throws FileNotFoundException {
+        //保存配置
+        Map configs = new HashMap<>();
+        ObservableList<TreeItem<NodeModel>> treeItems = tree.getRoot().getChildren();
+        for (int i = 0; i < treeItems.size(); i++) {
+            HostModel value = (HostModel) treeItems.get(i).getValue();
+            Map map = new HashMap();
+            map.put("hostName", value.getHostName());
+            map.put("port", value.getPort());
+            map.put("auth", value.getAuth());
+            configs.put("host" + i, map);
+        }
+        YamlUtils.write(configs, CommonConstant.CONFIG_FILE_NAME);
+    }
+
+    private Map<String, Map> initConfig(String file) {
+        Map<String, Map> configs = new HashMap<>();
+        try {
+            configs = YamlUtils.read(file, configs.getClass());
+        } catch (Exception e) {
+            //读取配置文件出错
+        }
+        return configs;
     }
 }

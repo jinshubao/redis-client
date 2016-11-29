@@ -48,7 +48,7 @@ dependencies {
             "org.springframework:spring-beans",
             "ch.qos.logback:logback-access",
             "ch.qos.logback:logback-classic",
-            "org.controlsfx:controlsfx:8.40.12"
+            "org.jyaml:jyaml:1.3"
     )
 
     testCompile("junit:junit:4.12")

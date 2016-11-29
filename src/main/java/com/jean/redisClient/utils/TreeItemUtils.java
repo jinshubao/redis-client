@@ -5,20 +5,17 @@ import com.jean.redisClient.model.HostModel;
 import com.jean.redisClient.model.NodeModel;
 import javafx.scene.control.TreeItem;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Created by jinshubao on 2016/11/28.
  */
-public class Utils {
+public class TreeItemUtils {
 
-    public static List<TreeItem<NodeModel>> getDbItems(HostModel hostModel) {
-        List<TreeItem<NodeModel>> list = new ArrayList<>();
+    public static TreeItem<NodeModel> createHostTreeItem(HostModel hostModel) {
+        TreeItem<NodeModel> hostModelTreeItem = new TreeItem<>(hostModel);
         for (int i = 0; i < 16; i++) {
-            list.add(new TreeItem<>(new DbModel(hostModel, i)));
+            hostModelTreeItem.getChildren().add(new TreeItem<>(new DbModel(hostModel, i)));
         }
-        return list;
+        return hostModelTreeItem;
     }
 
 }
