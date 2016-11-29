@@ -6,9 +6,9 @@ package com.jean.redisClient.model;
 public class HostModel extends NodeModel {
 
 
-    String hostName;
-    Integer port;
-    String auth;
+    protected String hostName;
+    protected Integer port;
+    protected String auth;
 
     public HostModel() {
     }

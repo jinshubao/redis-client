@@ -1,7 +1,6 @@
 package com.jean.redisClient.Service;
 
 import com.jean.redisClient.constant.CommonConstant;
-import com.jean.redisClient.model.BaseModel;
 import com.jean.redisClient.model.ListModel;
 import org.springframework.stereotype.Service;
 
@@ -13,12 +12,12 @@ import java.util.Set;
  * Created by jinshubao on 2016/11/25.
  */
 @Service
-public class ListService extends BaseService<List<BaseModel>> {
+public class ListService extends BaseService<List<ListModel>> {
 
     @Override
-    public List<BaseModel> task() {
+    public List<ListModel> task() {
         String cmd = (String) params.get("cmd");
-        List<BaseModel> result = new ArrayList<>();
+        List<ListModel> result = new ArrayList<>();
         if (cmd != null) {
             Set<String> keys = jedis.keys(cmd);
             keys.stream().filter(key -> key != null).forEach(key -> {

@@ -2,7 +2,7 @@ package com.jean.redisClient.factory;
 
 
 import com.jean.redisClient.Service.DelService;
-import com.jean.redisClient.model.BaseModel;
+import com.jean.redisClient.model.ListModel;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
@@ -20,15 +20,14 @@ import java.util.Map;
  * Created by jinshubao on 2016/11/25.
  */
 @Component
-public class TableCellFactory<T> implements Callback<TableColumn<BaseModel, T>, TableCell<BaseModel, T>> {
+public class TableCellFactory<T> implements Callback<TableColumn<ListModel, T>, TableCell<ListModel, T>> {
 
     @Autowired
-    DelService delService;
-
+    private DelService delService;
 
     @Override
-    public TableCell<BaseModel, T> call(TableColumn<BaseModel, T> p) {
-        return new TableCell<BaseModel, T>() {
+    public TableCell<ListModel, T> call(TableColumn<ListModel, T> p) {
+        return new TableCell<ListModel, T>() {
             @Override
             public void updateItem(T item, boolean empty) {
                 super.updateItem(item, empty);
@@ -38,12 +37,12 @@ public class TableCellFactory<T> implements Callback<TableColumn<BaseModel, T>, 
                 } else {
                     setText(item == null ? "" : item.toString());
                 }
-                getTableRow().setContextMenu(getMenu(item, (BaseModel) getTableRow().getItem()));
+                getTableRow().setContextMenu(getMenu(item, (ListModel) getTableRow().getItem()));
             }
         };
     }
 
-    private ContextMenu getMenu(T item, BaseModel data) {
+    private ContextMenu getMenu(T item, ListModel data) {
         ContextMenu contextMenu = new ContextMenu();
         MenuItem copy = new MenuItem("复制");
         copy.setOnAction(event -> {

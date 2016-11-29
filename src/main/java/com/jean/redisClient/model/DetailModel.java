@@ -5,17 +5,17 @@ import java.util.Collection;
 /**
  * Created by jinshubao on 2016/11/25.
  */
-public class DetailModel extends BaseModel {
+public class DetailModel extends ListModel {
 
     public DetailModel() {
     }
 
-    Long ttl;
+    private Long ttl;
 
-    public DetailModel(BaseModel baseModel) {
-        this.setKey(baseModel.getKey());
-        this.setType(baseModel.getType());
-        this.setSize(baseModel.getSize());
+    public DetailModel(ListModel listModel) {
+        this.setKey(listModel.getKey());
+        this.setType(listModel.getType());
+        this.setSize(listModel.getSize());
     }
 
     private Collection<String> values;

@@ -3,6 +3,7 @@ package com.jean.redisClient.Service;
 import com.jean.redisClient.constant.CommonConstant;
 import com.jean.redisClient.model.BaseModel;
 import com.jean.redisClient.model.DetailModel;
+import com.jean.redisClient.model.ListModel;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class DetailService extends BaseService<DetailModel> {
 
     @Override
     public DetailModel task() {
-        BaseModel model = (BaseModel) params.get("item");
+        ListModel model = (ListModel) params.get("item");
         if (model == null || model.getKey() == null) {
             return null;
         }

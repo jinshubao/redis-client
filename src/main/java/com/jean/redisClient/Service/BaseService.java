@@ -40,18 +40,17 @@ public abstract class BaseService<V> extends Service {
 
     public void addParams(String key, Object value) {
         this.params.put(key, value);
-        logger.info("增加参数[" + key + ":" + value + "]");
     }
 
     private void clearParams() {
         params.clear();
-        logger.info("清理参数...");
     }
 
-    private void closeRedis() {
+    private String closeRedis() {
         if (jedis != null) {
-            logger.info("关闭redis连接..." + jedis.quit());
+            return jedis.quit();
         }
+        return "";
     }
 
 
@@ -71,7 +70,6 @@ public abstract class BaseService<V> extends Service {
     public abstract V task();
 
     private void getConnection() {
-        logger.info("获取redis连接...");
         jedis = new Jedis(dbModel.getHostName(), dbModel.getPort());
         if (dbModel.getAuth() != null) {
             jedis.auth(dbModel.getAuth());
@@ -89,7 +87,9 @@ public abstract class BaseService<V> extends Service {
             @Override
             protected Object call() throws Exception {
                 printCurrentThreadName();
+                updateMessage("获取连接...");
                 getConnection();
+                updateMessage("开始执行任务...");
                 return task();
             }
 
@@ -99,18 +99,20 @@ public abstract class BaseService<V> extends Service {
                 clearParams();
                 closeRedis();
             }
+
+            @Override
+            protected void failed() {
+                super.failed();
+                updateMessage("任务执行失败...");
+                Throwable exception = getException();
+                logger.error(exception.getMessage(), exception);
+            }
+
+            @Override
+            protected void succeeded() {
+                super.succeeded();
+                updateMessage("任务执行成功...");
+            }
         };
-    }
-
-    @Override
-    protected void succeeded() {
-        super.succeeded();
-        logger.info("任务执行成功...");
-    }
-
-    @Override
-    protected void failed() {
-        super.failed();
-        logger.warn("任务执行失败...", getException());
     }
 }

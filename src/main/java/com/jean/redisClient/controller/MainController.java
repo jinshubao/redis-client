@@ -3,12 +3,11 @@ package com.jean.redisClient.controller;
 import com.jean.redisClient.Service.DelService;
 import com.jean.redisClient.Service.DetailService;
 import com.jean.redisClient.Service.ListService;
+import com.jean.redisClient.constant.CommonConstant;
 import com.jean.redisClient.factory.ListCellFactory;
 import com.jean.redisClient.factory.TableCellFactory;
 import com.jean.redisClient.factory.TreeCellFactory;
 import com.jean.redisClient.model.*;
-import com.jean.redisClient.utils.Utils;
-import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -17,10 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 
 @Controller
 @SuppressWarnings("unchecked")
@@ -35,13 +31,13 @@ public class MainController implements Initializable {
     @FXML
     public TreeView<NodeModel> tree;
     @FXML
-    public TableView<BaseModel> table;
+    public TableView<ListModel> table;
     @FXML
     public ProgressIndicator progress;
     @FXML
     public Label message;
     @FXML
-    private SplitPane splitPane;
+    public SplitPane splitPane;
 
     @Autowired
     private ListService listService;
@@ -61,8 +57,10 @@ public class MainController implements Initializable {
     @Autowired
     private DelService delService;
 
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+
         progress.visibleProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
 
         search.disableProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
@@ -76,18 +74,12 @@ public class MainController implements Initializable {
         tree.setCellFactory(treeCellFactory);
         tree.setRoot(new TreeItem<>(new RootModel("服务器列表")));
         tree.getRoot().setExpanded(true);
-        TreeItem<NodeModel> localhost = new TreeItem<>(new HostModel("localhost", 6379));
-        TreeItem<NodeModel> dev = new TreeItem<>(new HostModel("10.52.2.170", 6380, "90-=op[]"));
-        TreeItem<NodeModel> test = new TreeItem<>(new HostModel("10.52.2.170", 6379, "90-=op[]"));
-        tree.getRoot().getChildren().addAll(localhost, dev, test);
-        tree.getRoot().getChildren().forEach(node -> node.getChildren().addAll(Utils.getDbItems((HostModel) node.getValue())));
 
         tree.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) {
                 return;
             }
-            System.out.println(newValue.toString());
-            if (newValue.getValue() instanceof HostModel || newValue.getValue() instanceof DbModel) {
+            if (newValue.getValue() instanceof DbModel) {
                 //切换连接
                 dbChange();
                 listService.addParams("cmd", "*");
@@ -107,9 +99,13 @@ public class MainController implements Initializable {
         detail.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         detail.setCellFactory(listCellFactory);
 
-        listService.setOnRunning(event -> table.getItems().clear());
+        listService.setOnScheduled(event -> {
+            table.getItems().clear();
+            message.textProperty().unbind();
+            message.textProperty().bind(listService.messageProperty());
+        });
         listService.setOnSucceeded(event -> {
-            List<BaseModel> list = (List<BaseModel>) listService.getValue();
+            List<ListModel> list = (List<ListModel>) listService.getValue();
             table.getItems().addAll(list);
             //生成树形结构
         });
@@ -121,29 +117,46 @@ public class MainController implements Initializable {
                 detail.getValues().forEach(item -> this.detail.getItems().add(item));
             }
         });
-        detailService.setOnRunning(event -> detail.getItems().clear());
+        detailService.setOnScheduled(event -> {
+            detail.getItems().clear();
+            message.textProperty().unbind();
+            message.textProperty().bind(detailService.messageProperty());
+        });
 
         delService.setOnSucceeded(event -> {
-            BaseModel item = (BaseModel) delService.getValue();
+            ListModel item = (ListModel) delService.getValue();
             if (item != null) {
                 table.getItems().remove(item);
             }
         });
+
+        //读配置文件
+        List<HostModel> hostModels = new ArrayList<>();
+
+        hostModels.forEach(hostModel ->
+                tree.getRoot().getChildren().add(new TreeItem<>(new HostModel(hostModel.getHostName(), hostModel.getPort(), hostModel.getAuth()))));
     }
 
+    /**
+     * 切换db
+     */
     private void dbChange() {
         DbModel dbModel = null;
         TreeItem<NodeModel> selectedItem = tree.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
             NodeModel value = selectedItem.getValue();
-            if (value instanceof HostModel) {
-                dbModel = new DbModel((HostModel) value, 0);
-            } else if (value instanceof DbModel) {
+            if (value instanceof DbModel) {
                 dbModel = (DbModel) value;
             }
         }
         listService.setDbModel(dbModel);
         detailService.setDbModel(dbModel);
         delService.setDbModel(dbModel);
+    }
+
+    //主程序退出回调
+    public void close() {
+        //
+        System.out.println("退出了。。。。");
     }
 }

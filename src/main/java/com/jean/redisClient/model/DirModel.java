@@ -3,24 +3,25 @@ package com.jean.redisClient.model;
 /**
  * Created by jinshubao on 2016/11/28.
  */
-public class DirModel extends NodeModel {
+public class DirModel extends DbModel {
 
-    public DirModel(String name) {
-        this.name = name;
+    protected String dirName;
+
+    public DirModel(DbModel dbModel, String dirName) {
+        super(dbModel, dbModel.dbIndex);
+        this.dirName = dirName;
     }
 
-    private String name;
-
-    public String getName() {
-        return name;
+    public String getDirName() {
+        return dirName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setDirName(String dirName) {
+        this.dirName = dirName;
     }
 
     @Override
     public String toString() {
-        return name;
+        return dirName == null ? "" : dirName;
     }
 }

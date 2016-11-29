@@ -7,6 +7,14 @@ apply plugin: 'spring-boot'
 
 sourceCompatibility = 1.8
 
+apply plugin: 'application'
+mainClassName = 'com.jean.redisClient.MainApp'
+
+jar {
+    baseName = 'redist-client-testname'
+    version =  '1.2.0'
+}
+
 repositories {
     mavenCentral()
 }
@@ -17,7 +25,7 @@ buildscript {
     }
     repositories {
         mavenLocal()
-        maven { url "http://10.52.2.106:8081/repository/maven-public/" }
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
     }
 
     dependencies {
@@ -28,8 +36,9 @@ buildscript {
 [compileJava, compileTestJava]*.options*.encoding = "UTF-8"
 
 repositories {
+    mavenLocal()
     maven {
-        url "http://10.52.2.106:8081/repository/maven-public/"
+        url "http://maven.aliyun.com/nexus/content/groups/public"
     }
 }
 
@@ -38,11 +47,9 @@ dependencies {
             "org.springframework.boot:spring-boot-starter-redis:${springBootVersion}",
             "org.springframework:spring-beans",
             "ch.qos.logback:logback-access",
-            "ch.qos.logback:logback-classic"
+            "ch.qos.logback:logback-classic",
+            "org.controlsfx:controlsfx:8.40.12"
     )
 
-    testCompile(
-            "junit:junit:4.12",
-            "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
-    )
+    testCompile("junit:junit:4.12")
 }
