@@ -32,7 +32,10 @@ public class YamlUtils {
      * @throws FileNotFoundException
      */
     public static <T> T read(String filePath, Class<T> clazz) throws FileNotFoundException {
-        File dumpFile = new File(filePath);
-        return Yaml.loadType(dumpFile, clazz);
+        File file = new File(filePath);
+        if (!file.exists()){
+            file.mkdirs();
+        }
+        return Yaml.loadType(file, clazz);
     }
 }

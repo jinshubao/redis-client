@@ -28,9 +28,6 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-
-        notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_START));
-
         FXMLLoader loader = new FXMLLoader();
         loader.setControllerFactory(param -> applicationContext.getBean(param));
         Parent root = loader.load(getClass().getResourceAsStream("/fxml/Scene.fxml"));
@@ -39,6 +36,8 @@ public class MainApp extends Application {
         stage.setTitle("redis client - v1.0");
         stage.getIcons().add(new Image(getClass().getResourceAsStream("/image/dbs_redis_48px_.png")));
         stage.setScene(scene);
+
+        notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_START));
         stage.show();
         stage.setOnCloseRequest(event -> {
             Dialog<ButtonType> dialog = new Dialog<>();

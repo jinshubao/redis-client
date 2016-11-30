@@ -4,16 +4,11 @@ version '1.0'
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'spring-boot'
+apply plugin: 'application'
 
 sourceCompatibility = 1.8
 
-apply plugin: 'application'
-mainClassName = 'com.jean.redisClient.MainApp'
 
-jar {
-    baseName = 'redist-client-testname'
-    version =  '1.2.0'
-}
 
 repositories {
     mavenCentral()
@@ -52,4 +47,18 @@ dependencies {
     )
 
     testCompile("junit:junit:4.12")
+}
+
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes('Implementation-Version': version,
+                'JavaFX-Preloader-Class': 'com.jean.redisClient.preloader.AppPreloader',
+                'JavaFX-Application-Class': 'com.jean.redisClient.MainApp',
+                'Main-Class': 'com/javafx/main/Main'
+        )
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }

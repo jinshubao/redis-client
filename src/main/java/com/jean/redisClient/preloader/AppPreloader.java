@@ -24,8 +24,8 @@ public class AppPreloader extends Preloader {
     }
 
     @Override
-    public void handleApplicationNotification(PreloaderNotification pn) {
-        if (pn instanceof StateChangeNotification) {
+    public void handleStateChangeNotification(StateChangeNotification scn) {
+        if (scn.getType() == StateChangeNotification.Type.BEFORE_START) {
             stage.hide();
         }
     }
