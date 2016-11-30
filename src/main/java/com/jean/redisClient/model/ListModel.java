@@ -3,11 +3,15 @@ package com.jean.redisClient.model;
 /**
  * Created by jinshubao on 2016/11/25.
  */
-public class ListModel {
+public class ListModel  extends DbModel{
 
     private String key;
     private String type;
     private Long size = 0L;
+
+    public ListModel(DbModel dbModel) {
+        super(dbModel, dbModel.dbIndex);
+    }
 
     public String getKey() {
         return key;

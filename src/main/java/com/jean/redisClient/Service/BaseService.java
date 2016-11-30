@@ -1,8 +1,9 @@
 package com.jean.redisClient.Service;
 
-import com.jean.redisClient.model.DbModel;
+import com.jean.redisClient.model.NodeModel;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
+import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +25,10 @@ public abstract class BaseService<V> extends Service {
         this.setExecutor(executor);
     }
 
-    private DbModel dbModel;
-
-    public void setDbModel(DbModel dbModel) {
-        this.dbModel = dbModel;
-    }
+    protected String hostName;
+    protected Integer dbIndex;
+    protected Integer port;
+    protected String auth;
 
     protected Jedis jedis;
 
@@ -55,27 +55,24 @@ public abstract class BaseService<V> extends Service {
 
 
     private void printCurrentThreadName() {
-        //logger.info(Thread.currentThread().getName());
+        logger.debug(Thread.currentThread().getName());
     }
 
-    @Override
-    public void restart() {
-        if (!isRunning()) {
-            super.restart();
-        } else {
-            logger.warn("任务正在执行不能重复执行...");
-        }
+    private void printParams() {
+        params.forEach((key, value) -> {
+            logger.debug(key + ":" + value);
+        });
     }
 
     public abstract V task();
 
     private void getConnection() {
-        jedis = new Jedis(dbModel.getHostName(), dbModel.getPort());
-        if (dbModel.getAuth() != null) {
-            jedis.auth(dbModel.getAuth());
+        jedis = new Jedis(hostName, port);
+        if (auth != null) {
+            jedis.auth(auth);
         }
-        if (dbModel.getDbIndex() != null) {
-            jedis.select(dbModel.getDbIndex());
+        if (dbIndex != null) {
+            jedis.select(dbIndex);
         } else {
             jedis.select(0);
         }
@@ -87,6 +84,7 @@ public abstract class BaseService<V> extends Service {
             @Override
             protected Object call() throws Exception {
                 printCurrentThreadName();
+                printParams();
                 updateMessage("获取连接...");
                 getConnection();
                 updateMessage("开始执行任务...");
@@ -115,4 +113,14 @@ public abstract class BaseService<V> extends Service {
             }
         };
     }
+
+    @Override
+    public void restart() {
+        if (!isRunning()){
+            super.restart();
+        }else{
+            logger.info("不能重复执行任务...");
+        }
+    }
+
 }

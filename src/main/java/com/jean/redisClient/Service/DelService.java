@@ -8,13 +8,26 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class DelService extends BaseService<ListModel> {
+    @Override
+    public void restart() {
+    }
+
+    private ListModel listModel;
+
+    public void restart(ListModel listModel) {
+        this.listModel = listModel;
+        this.hostName = listModel.getHostName();
+        this.port = listModel.getPort();
+        this.auth = listModel.getAuth();
+        this.dbIndex = listModel.getDbIndex();
+        super.restart();
+    }
 
     @Override
     public ListModel task() {
-        ListModel item = (ListModel) params.get("item");
-        if (item != null && item.getKey() != null) {
-            jedis.del(item.getKey());
-            return item;
+        if (listModel.getKey() != null) {
+            jedis.del(listModel.getKey());
+            return listModel;
         }
         return null;
     }

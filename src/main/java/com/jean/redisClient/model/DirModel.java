@@ -6,10 +6,12 @@ package com.jean.redisClient.model;
 public class DirModel extends DbModel {
 
     protected String dirName;
+    protected String fullPath;
 
-    public DirModel(DbModel dbModel, String dirName) {
+    public DirModel(DbModel dbModel, String dirName, String dirFullName) {
         super(dbModel, dbModel.dbIndex);
         this.dirName = dirName;
+        this.fullPath = dirFullName;
     }
 
     public String getDirName() {
@@ -20,8 +22,20 @@ public class DirModel extends DbModel {
         this.dirName = dirName;
     }
 
+    public String getFullPath() {
+        return fullPath;
+    }
+
+    public void setFullPath(String fullPath) {
+        this.fullPath = fullPath;
+    }
+
     @Override
     public String toString() {
         return dirName == null ? "" : dirName;
+    }
+
+    public String location() {
+        return super.location() + ":" + fullPath;
     }
 }

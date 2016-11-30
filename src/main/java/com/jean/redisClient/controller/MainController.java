@@ -20,10 +20,7 @@ import org.springframework.stereotype.Controller;
 
 import java.io.FileNotFoundException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 
 @Controller
 @SuppressWarnings("unchecked")
@@ -40,11 +37,11 @@ public class MainController implements Initializable {
     @FXML
     public TableView<ListModel> table;
     @FXML
-    public ProgressIndicator progress;
-    @FXML
     public Label message;
     @FXML
     public SplitPane splitPane;
+    @FXML
+    public Label dbInfo;
 
     @Autowired
     private ListService listService;
@@ -68,8 +65,6 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 
-        progress.visibleProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
-
         search.disableProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
         search.setOnAction(event -> {
             Map<String, Object> params = new HashMap<>();
@@ -83,15 +78,7 @@ public class MainController implements Initializable {
         tree.getRoot().setExpanded(true);
 
         tree.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == null) {
-                return;
-            }
-            if (newValue.getValue() instanceof DbModel) {
-                //切换连接
-                dbChange();
-                listService.addParams("cmd", "*");
-                listService.restart();
-            }
+            dbChange(newValue);
         });
 
         table.getColumns().get(0).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getKey()));
@@ -99,12 +86,22 @@ public class MainController implements Initializable {
         table.getColumns().get(2).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getSize()));
         table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             detailService.addParams("item", newValue);
-            detailService.restart();
+            detailService.restart(newValue);
         });
         table.getColumns().get(0).setCellFactory(tableCellFactory);
+        ProgressIndicator listProgress = new ProgressIndicator(-1D);
+        listProgress.setMaxHeight(50D);
+        listProgress.setMaxWidth(50D);
+        listProgress.visibleProperty().bind(listService.runningProperty());
+        table.setPlaceholder(listProgress);
 
         detail.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         detail.setCellFactory(listCellFactory);
+        ProgressIndicator detailProgress = new ProgressIndicator(-1D);
+        detailProgress.setMaxHeight(50D);
+        detailProgress.setMaxWidth(50D);
+        detailProgress.visibleProperty().bind(detailService.runningProperty());
+        detail.setPlaceholder(detailProgress);
 
         listService.setOnScheduled(event -> {
             table.getItems().clear();
@@ -115,6 +112,7 @@ public class MainController implements Initializable {
             List<ListModel> list = (List<ListModel>) listService.getValue();
             table.getItems().addAll(list);
             //生成树形结构
+            TreeItemUtils.generateDir(listService.getTreeItem(), new ArrayList(table.getItems()));
         });
 
         detailService.setOnSucceeded(event -> {
@@ -141,7 +139,19 @@ public class MainController implements Initializable {
         Map config = initConfig(CommonConstant.CONFIG_FILE_NAME);
         config.forEach((key, m) -> {
             Map map = (Map) m;
-            HostModel hostModel = new HostModel(map.get("hostName").toString(), Integer.parseInt(map.get("port").toString()), map.get("auth").toString());
+            Object auth = map.get("auth");
+            Object hostName = map.get("hostName");
+            Object port = map.get("port");
+            HostModel hostModel = new HostModel("unnamedhost", 0);
+            if (hostName != null) {
+                hostModel.setHostName(hostName.toString().trim());
+            }
+            if (port != null && !port.toString().trim().isEmpty()) {
+                hostModel.setPort(Integer.parseInt(port.toString().trim()));
+            }
+            if (auth != null) {
+                hostModel.setAuth(auth.toString());
+            }
             tree.getRoot().getChildren().add(TreeItemUtils.createHostTreeItem(hostModel));
         });
     }
@@ -149,38 +159,38 @@ public class MainController implements Initializable {
     /**
      * 切换db
      */
-    private void dbChange() {
-        DbModel dbModel = null;
-        TreeItem<NodeModel> selectedItem = tree.getSelectionModel().getSelectedItem();
-        if (selectedItem != null) {
-            NodeModel value = selectedItem.getValue();
-            if (value instanceof DbModel) {
-                dbModel = (DbModel) value;
-            }
+    private void dbChange(TreeItem<NodeModel> newValue) {
+        if (newValue == null) {
+            dbInfo.setText(null);
+            return;
         }
-        listService.setDbModel(dbModel);
-        detailService.setDbModel(dbModel);
-        delService.setDbModel(dbModel);
+        NodeModel model = newValue.getValue();
+        dbInfo.setText(model.location());
+        if (model instanceof DbModel) {
+            listService.restart(newValue);
+        }
     }
 
     //主程序退出回调
     public void close() throws FileNotFoundException {
         //保存配置
-        Map configs = new HashMap<>();
+        Map configs = new LinkedHashMap<>();
         ObservableList<TreeItem<NodeModel>> treeItems = tree.getRoot().getChildren();
         for (int i = 0; i < treeItems.size(); i++) {
             HostModel value = (HostModel) treeItems.get(i).getValue();
             Map map = new HashMap();
             map.put("hostName", value.getHostName());
             map.put("port", value.getPort());
-            map.put("auth", value.getAuth());
+            if (value.getAuth() != null) {
+                map.put("auth", value.getAuth());
+            }
             configs.put("host" + i, map);
         }
         YamlUtils.write(configs, CommonConstant.CONFIG_FILE_NAME);
     }
 
     private Map<String, Map> initConfig(String file) {
-        Map<String, Map> configs = new HashMap<>();
+        Map<String, Map> configs = new LinkedHashMap<>();
         try {
             configs = YamlUtils.read(file, configs.getClass());
         } catch (Exception e) {

@@ -23,4 +23,9 @@ public class RootModel extends NodeModel {
     public String toString() {
         return name;
     }
+
+    @Override
+    public String location() {
+        return toString();
+    }
 }

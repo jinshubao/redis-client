@@ -28,4 +28,8 @@ public class DbModel extends HostModel {
     public String toString() {
         return "db" + dbIndex;
     }
+
+    public String location() {
+        return super.location() + ":db" + dbIndex;
+    }
 }

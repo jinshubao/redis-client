@@ -1,9 +1,11 @@
 package com.jean.redisClient.utils;
 
-import com.jean.redisClient.model.DbModel;
-import com.jean.redisClient.model.HostModel;
-import com.jean.redisClient.model.NodeModel;
+import com.jean.redisClient.model.*;
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
+
+import java.util.List;
 
 /**
  * Created by jinshubao on 2016/11/28.
@@ -18,4 +20,39 @@ public class TreeItemUtils {
         return hostModelTreeItem;
     }
 
+    public static void generateDir(TreeItem<NodeModel> dbTreeItem, List<ListModel> models) {
+        dbTreeItem.getChildren().clear();
+        Platform.runLater(() -> models.stream().filter(model -> model != null && (model.getKey().contains(":"))).forEach(model -> {
+            String fullKey = model.getKey();
+            NodeModel itemValue = dbTreeItem.getValue();
+            if (itemValue instanceof DirModel) {
+                DirModel dirModel = (DirModel) itemValue;
+                fullKey = fullKey.replaceFirst(dirModel.getFullPath(), "");
+            }
+            String[] keys = fullKey.split(":");
+            if (!fullKey.contains(":")) {
+                return;
+            }
+            String key = keys[0];
+            String fullName = key + ":";
+            if (itemValue instanceof DirModel) {
+                DirModel dirModel = (DirModel) itemValue;
+                fullName = dirModel.getFullPath() + fullName;
+            }
+
+            boolean exsit = false;
+            ObservableList<TreeItem<NodeModel>> children = dbTreeItem.getChildren();
+            for (TreeItem<NodeModel> treeItem : children) {
+                DirModel value = (DirModel) treeItem.getValue();
+                if (key.equals(value.getDirName())) {
+                    fullName = value.getFullPath() + fullName;
+                    exsit = true;
+                    break;
+                }
+            }
+            if (!exsit) {
+                children.add(new TreeItem<>(new DirModel((DbModel) itemValue, key, fullName)));
+            }
+        }));
+    }
 }

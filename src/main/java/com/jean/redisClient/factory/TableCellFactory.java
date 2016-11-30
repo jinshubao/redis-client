@@ -35,7 +35,15 @@ public class TableCellFactory<T> implements Callback<TableColumn<ListModel, T>, 
                     setText(null);
                     setGraphic(null);
                 } else {
-                    setText(item == null ? "" : item.toString());
+                    if (item == null) {
+                        setText(null);
+                    } else {
+                        String key = item.toString();
+//                        if (key.contains(":")) {
+//                            key = key.substring(key.lastIndexOf(":") + 1, key.length());
+//                        }
+                        setText(key);
+                    }
                 }
                 getTableRow().setContextMenu(getMenu(item, (ListModel) getTableRow().getItem()));
             }
@@ -52,8 +60,7 @@ public class TableCellFactory<T> implements Callback<TableColumn<ListModel, T>, 
         });
         MenuItem del = new MenuItem("删除");
         del.setOnAction(event -> {
-            delService.addParams("item", data);
-            delService.restart();
+            delService.restart(data);
         });
         contextMenu.getItems().addAll(copy, del);
         return contextMenu;

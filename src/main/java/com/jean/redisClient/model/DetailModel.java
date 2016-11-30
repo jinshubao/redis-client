@@ -7,15 +7,14 @@ import java.util.Collection;
  */
 public class DetailModel extends ListModel {
 
-    public DetailModel() {
-    }
-
     private Long ttl;
 
-    public DetailModel(ListModel listModel) {
+    public DetailModel(ListModel listModel, Long ttl) {
+        super(listModel);
         this.setKey(listModel.getKey());
         this.setType(listModel.getType());
         this.setSize(listModel.getSize());
+        this.ttl = ttl;
     }
 
     private Collection<String> values;

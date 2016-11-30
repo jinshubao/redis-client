@@ -1,7 +1,8 @@
 package com.jean.redisClient.Service;
 
 import com.jean.redisClient.constant.CommonConstant;
-import com.jean.redisClient.model.ListModel;
+import com.jean.redisClient.model.*;
+import javafx.scene.control.TreeItem;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -14,6 +15,31 @@ import java.util.Set;
 @Service
 public class ListService extends BaseService<List<ListModel>> {
 
+    private TreeItem<NodeModel> treeItem;
+
+    public void restart(TreeItem<NodeModel> treeItem) {
+        if (isRunning()){
+            return;
+        }
+        this.treeItem = treeItem;
+        NodeModel value = treeItem.getValue();
+        params.put("cmd", "*");
+        if (value instanceof HostModel) {
+            this.hostName = ((HostModel) value).getHostName();
+            this.port = ((HostModel) value).getPort();
+            this.auth = ((HostModel) value).getAuth();
+            this.dbIndex = 0;
+            if (value instanceof DbModel) {
+                this.dbIndex = ((DbModel) value).getDbIndex();
+                if (value instanceof DirModel) {
+                    DirModel dirModel = (DirModel) value;
+                    params.put("cmd", dirModel.getFullPath() + "*");
+                }
+            }
+        }
+        super.restart();
+    }
+
     @Override
     public List<ListModel> task() {
         String cmd = (String) params.get("cmd");
@@ -22,7 +48,7 @@ public class ListService extends BaseService<List<ListModel>> {
             Set<String> keys = jedis.keys(cmd);
             keys.stream().filter(key -> key != null).forEach(key -> {
                 String dataType = jedis.type(key);
-                ListModel listModel = new ListModel();
+                ListModel listModel = new ListModel(new DbModel(hostName, port, auth, dbIndex));
                 listModel.setKey(key);
                 listModel.setType(dataType);
                 Long size = 0L;
@@ -43,5 +69,10 @@ public class ListService extends BaseService<List<ListModel>> {
             });
         }
         return result;
+    }
+
+
+    public TreeItem<NodeModel> getTreeItem() {
+        return treeItem;
     }
 }

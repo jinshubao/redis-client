@@ -1,7 +1,6 @@
 package com.jean.redisClient.Service;
 
 import com.jean.redisClient.constant.CommonConstant;
-import com.jean.redisClient.model.BaseModel;
 import com.jean.redisClient.model.DetailModel;
 import com.jean.redisClient.model.ListModel;
 import org.springframework.stereotype.Service;
@@ -17,12 +16,24 @@ import java.util.Map;
 public class DetailService extends BaseService<DetailModel> {
 
     @Override
+    public void restart() {
+    }
+
+    public void restart(ListModel listModel) {
+        this.hostName = listModel.getHostName();
+        this.port = listModel.getPort();
+        this.auth = listModel.getAuth();
+        this.dbIndex = listModel.getDbIndex();
+        super.restart();
+    }
+
+
+    @Override
     public DetailModel task() {
         ListModel model = (ListModel) params.get("item");
         if (model == null || model.getKey() == null) {
             return null;
         }
-        DetailModel detail = new DetailModel(model);
         Collection<String> collection = new ArrayList<>();
         if (CommonConstant.REDIS_TYPE_STRING.equalsIgnoreCase(model.getType())) {
             String value = jedis.get(model.getKey());
@@ -37,8 +48,7 @@ public class DetailService extends BaseService<DetailModel> {
             Map<String, String> map = jedis.hgetAll(model.getKey());
             map.forEach((key, value) -> collection.add(key + ":" + value));
         }
-        detail.setTtl(jedis.ttl(model.getKey()));
-        detail.setSize((long) collection.size());
+        DetailModel detail = new DetailModel(model, jedis.ttl(model.getKey()));
         detail.setValues(collection);
         return detail;
     }

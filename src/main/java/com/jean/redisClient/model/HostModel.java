@@ -52,4 +52,9 @@ public class HostModel extends NodeModel {
     public String toString() {
         return hostName + ":" + port;
     }
+
+    @Override
+    public String location() {
+        return hostName + ":" + port;
+    }
 }
