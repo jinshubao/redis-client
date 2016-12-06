@@ -136,7 +136,7 @@ public class MainController implements Initializable {
         });
 
         //读配置文件
-        Map config = initConfig(CommonConstant.CONFIG_FILE_NAME);
+        Map config = initConfig(CommonConstant.CONFIG_FILE_PATH + CommonConstant.CONFIG_FILE_NAME);
         config.forEach((key, m) -> {
             Map map = (Map) m;
             Object auth = map.get("auth");
@@ -186,16 +186,19 @@ public class MainController implements Initializable {
             }
             configs.put("host" + i, map);
         }
-        YamlUtils.write(configs, CommonConstant.CONFIG_FILE_NAME);
+        YamlUtils.write(configs, CommonConstant.CONFIG_FILE_PATH, CommonConstant.CONFIG_FILE_NAME);
     }
 
     private Map<String, Map> initConfig(String file) {
-        Map<String, Map> configs = new LinkedHashMap<>();
         try {
+            Map<String, Map> configs = new LinkedHashMap<>();
             configs = YamlUtils.read(file, configs.getClass());
+            if (configs != null) {
+                return configs;
+            }
         } catch (Exception e) {
             //读取配置文件出错
         }
-        return configs;
+        return new HashMap<>();
     }
 }

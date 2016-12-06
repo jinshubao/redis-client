@@ -17,9 +17,12 @@ public class YamlUtils {
      * @param filePath
      * @throws FileNotFoundException
      */
-    public static void write(Object object, String filePath) throws FileNotFoundException {
+    public static void write(Object object, String filePath, String fileName) throws FileNotFoundException {
         File file = new File(filePath);
-        Yaml.dump(object, file);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        Yaml.dump(object, new File(filePath + fileName));
     }
 
     /**
@@ -33,8 +36,8 @@ public class YamlUtils {
      */
     public static <T> T read(String filePath, Class<T> clazz) throws FileNotFoundException {
         File file = new File(filePath);
-        if (!file.exists()){
-            file.mkdirs();
+        if (!file.exists()) {
+            return null;
         }
         return Yaml.loadType(file, clazz);
     }
