@@ -49,8 +49,7 @@ dependencies {
     testCompile("junit:junit:4.12")
 }
 
-
-task fatJar(type: Jar) {
+jar {
     manifest {
         attributes('Implementation-Version': version,
                 'JavaFX-Preloader-Class': 'com.jean.redisClient.preloader.AppPreloader',
@@ -58,7 +57,5 @@ task fatJar(type: Jar) {
                 'Main-Class': 'com/javafx/main/Main'
         )
     }
-    baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
 }
