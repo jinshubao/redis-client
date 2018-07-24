@@ -1,17 +1,30 @@
-build/
-dist
 .gradle
-*.iml
-.idea
-gradle-app.setting
-node_modules
-bower_components
-!gradle-wrapper.jar
-*.class
-.tmp
-.mtj.tmp/
-*.pdb
-*.jar
-*.war
-*.ear
+/build/
+/logs/
+/temp/
+!gradle/wrapper/gradle-wrapper.jar
 
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+*.pid
+/out/
+
+### NetBeans ###
+/nbproject/private/
+/build/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/

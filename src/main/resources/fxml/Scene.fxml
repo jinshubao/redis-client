@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane prefHeight="700.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.91" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.jean.redisClient.controller.MainController">
+<BorderPane prefHeight="700.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.91" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.jean.redis.client.controller.MainController">
    <top>
       <VBox>
          <children>
@@ -24,13 +24,13 @@
               <menus>
                 <Menu mnemonicParsing="false" text="文件">
                   <items>
-                        <MenuItem mnemonicParsing="false" text="新建连接" />
-                        <MenuItem mnemonicParsing="false" text="退出" />
+                        <MenuItem fx:id="newConnection" mnemonicParsing="false" text="新建连接" />
+                        <MenuItem fx:id="exit" mnemonicParsing="false" text="退出" />
                   </items>
                 </Menu>
                   <Menu mnemonicParsing="false" text="帮助">
                      <items>
-                        <MenuItem mnemonicParsing="false" text="关于" />
+                        <MenuItem fx:id="about" mnemonicParsing="false" text="关于" />
                      </items>
                   </Menu>
               </menus>
