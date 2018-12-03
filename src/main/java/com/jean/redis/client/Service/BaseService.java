@@ -1,6 +1,7 @@
 package com.jean.redis.client.Service;
 
 import com.jean.redis.client.callback.TaskCallback;
+import com.jean.redis.client.constant.CommonConstant;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import redis.clients.jedis.Jedis;
+import redis.clients.util.Pool;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,14 +63,10 @@ public abstract class BaseService<V> extends Service {
     protected abstract V task();
 
     private void getConnection() {
-        jedis = new Jedis(hostName, port);
-        if (auth != null) {
-            jedis.auth(auth);
-        }
+        Pool pool = CommonConstant.REDIS_POOL.get(hostName + "_" + port);
+        jedis = (Jedis) pool.getResource();
         if (dbIndex != null) {
             jedis.select(dbIndex);
-        } else {
-            jedis.select(0);
         }
     }
 
@@ -115,15 +113,6 @@ public abstract class BaseService<V> extends Service {
         };
     }
 
-    @Override
-    public void restart() {
-        if (!isRunning()) {
-            super.restart();
-        } else {
-            logger.info("不能重复执行任务...");
-        }
-    }
-
     protected void clean() {
     }
 
@@ -133,5 +122,11 @@ public abstract class BaseService<V> extends Service {
 
     protected void setFailedCallback(TaskCallback<Throwable> failedCallback) {
         this.failedCallback = failedCallback;
+    }
+
+    protected void assertNotRunning() {
+        if (isRunning()) {
+            throw new RuntimeException("不能重复执行任务...");
+        }
     }
 }

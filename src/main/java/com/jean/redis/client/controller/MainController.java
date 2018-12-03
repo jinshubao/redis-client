@@ -3,6 +3,7 @@ package com.jean.redis.client.controller;
 import com.jean.redis.client.Service.DelService;
 import com.jean.redis.client.Service.DetailService;
 import com.jean.redis.client.Service.ListService;
+import com.jean.redis.client.Service.PageListService;
 import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.entry.Node;
 import com.jean.redis.client.entry.NodeType;
@@ -14,8 +15,6 @@ import com.jean.redis.client.utils.TreeItemUtils;
 import com.jean.redis.client.utils.YamlUtils;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -74,6 +73,9 @@ public class MainController implements Initializable {
     @Autowired
     private DelService delService;
 
+    @Autowired
+    private PageListService pageListService;
+
 
     /**
      * init
@@ -96,7 +98,7 @@ public class MainController implements Initializable {
         });
         search.disableProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
         search.setOnAction(event -> {
-            Map<String, Object> params = new HashMap<>();
+            Map<String, Object> params = new HashMap<>(1);
             params.put("cmd", keyword.getText());
             listService.setParams(params);
             listService.restart();
@@ -199,7 +201,7 @@ public class MainController implements Initializable {
             if (auth != null) {
                 node.setAuth(auth.toString());
             }
-            tree.getRoot().getChildren().add(TreeItemUtils.createHostNode(node));
+            tree.getRoot().getChildren().add(new TreeItem<>(node));
         });
 
         tree.disableProperty().bind(listService.runningProperty());

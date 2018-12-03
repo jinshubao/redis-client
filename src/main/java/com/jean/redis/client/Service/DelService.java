@@ -23,6 +23,7 @@ public class DelService extends BaseService<HostNode> {
     private Object binding;
 
     public void restart(HostNode listItem, String keys) {
+        assertNotRunning();
         this.listItem = listItem;
         this.keys = keys;
         this.hostName = listItem.getHostName();

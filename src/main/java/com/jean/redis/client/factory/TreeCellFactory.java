@@ -1,12 +1,14 @@
 package com.jean.redis.client.factory;
 
 
+import com.jean.redis.client.Service.DelService;
+import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.entry.Node;
 import com.jean.redis.client.entry.NodeType;
 import com.jean.redis.client.model.DirNode;
 import com.jean.redis.client.model.HostNode;
 import com.jean.redis.client.utils.TreeItemUtils;
-import com.jean.redis.client.Service.DelService;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -14,8 +16,14 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Protocol;
+import redis.clients.util.Pool;
+
+import java.util.Objects;
 
 /**
  * Created by jinshubao on 2016/11/25.
@@ -40,6 +48,7 @@ public class TreeCellFactory implements Callback<TreeView<Node>, TreeCell<Node>>
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
+                    setContextMenu(null);
                 } else {
                     TreeItem<Node> treeItem = getTreeItem();
                     ContextMenu contextMenu = new ContextMenu();
@@ -64,10 +73,41 @@ public class TreeCellFactory implements Callback<TreeView<Node>, TreeCell<Node>>
                             });
                         });
                     } else if (item.getNodeType() == NodeType.HOST) {
+                        MenuItem connect = new MenuItem("打开连接");
+                        MenuItem close = new MenuItem("关闭连接");
                         MenuItem del = new MenuItem("删除连接");
-                        contextMenu.getItems().add(del);
-                        del.setOnAction(t -> treeItem.getParent().getChildren().remove(treeItem));
-                    } else if (item instanceof DirNode) {
+                        HostNode hostNode = (HostNode) item;
+                        contextMenu.getItems().addAll(connect, close, del);
+                        del.setOnAction(t -> {
+                            String poolKey = poolKey(hostNode.getHostName(), hostNode.getPort());
+                            Pool pool = CommonConstant.REDIS_POOL.remove(poolKey);
+                            if (!Objects.isNull(pool)) {
+                                pool.close();
+                            }
+                            treeItem.getParent().getChildren().remove(treeItem);
+                        });
+                        connect.setOnAction(t -> {
+                            String poolKey = poolKey(hostNode.getHostName(), hostNode.getPort());
+                            if (!CommonConstant.REDIS_POOL.containsKey(poolKey)) {
+                                Pool pool = createPool(hostNode.getHostName(), hostNode.getPort(), hostNode.getAuth());
+                                CommonConstant.REDIS_POOL.put(poolKey, pool);
+                                TreeItem<Node> node = TreeItemUtils.createHostNode(hostNode);
+                                ObservableList<TreeItem<Node>> children = node.getChildren();
+                                treeItem.getChildren().addAll(children);
+                                treeItem.setExpanded(true);
+                            }
+
+                        });
+                        close.setOnAction(t -> {
+                            String poolKey = poolKey(hostNode.getHostName(), hostNode.getPort());
+                            Pool pool = CommonConstant.REDIS_POOL.remove(poolKey);
+                            if (!Objects.isNull(pool)) {
+                                pool.close();
+                            }
+                            treeItem.getChildren().clear();
+                            treeItem.setExpanded(false);
+                        });
+                    } else if (item.getNodeType() == NodeType.DIR) {
                         MenuItem del = new MenuItem("删除");
                         contextMenu.getItems().add(del);
                         DirNode dirNode = (DirNode) item;
@@ -118,6 +158,22 @@ public class TreeCellFactory implements Callback<TreeView<Node>, TreeCell<Node>>
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialogPane.setContent(grid);
         return dialog;
+    }
+
+    /**
+     * 创建连接池
+     *
+     * @param host
+     * @param port
+     * @return
+     */
+    private Pool createPool(String host, int port, String auth) {
+        return new JedisPool(new GenericObjectPoolConfig(), host, port, Protocol.DEFAULT_TIMEOUT, auth,
+                Protocol.DEFAULT_DATABASE, "redis-client");
+    }
+
+    private String poolKey(String host, int port) {
+        return host + "_" + port;
     }
 
 }

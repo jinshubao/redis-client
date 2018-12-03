@@ -37,20 +37,15 @@ public class DetailService extends BaseService<DetailItem> {
         }
         Collection<String> collection = new ArrayList<>();
         if (CommonConstant.REDIS_TYPE_STRING.equalsIgnoreCase(model.getType())) {
-            logger.debug("GET {}", model.getKey());
             String value = jedis.get(model.getKey());
             collection.add(value);
         } else if (CommonConstant.REDIS_TYPE_LIST.equalsIgnoreCase(model.getType())) {
-            logger.debug("LRANGE {} 0 -1", model.getKey());
             collection.addAll(jedis.lrange(model.getKey(), 0, -1));
         } else if (CommonConstant.REDIS_TYPE_SET.equalsIgnoreCase(model.getType())) {
-            logger.debug("SMEMBERS {}", model.getKey());
             collection.addAll(jedis.smembers(model.getKey()));
         } else if (CommonConstant.REDIS_TYPE_ZSET.equalsIgnoreCase(model.getType())) {
-            logger.debug("ZRANGE {} 0 -1", model.getKey());
             collection.addAll(jedis.zrange(model.getKey(), 0, -1));
         } else if (CommonConstant.REDIS_TYPE_HASH.equalsIgnoreCase(model.getType())) {
-            logger.debug("HGETALL {}", model.getKey());
             Map<String, String> map = jedis.hgetAll(model.getKey());
             map.forEach((key, value) -> collection.add(key + ":" + value));
         }

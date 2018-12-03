@@ -8,11 +8,12 @@ import com.jean.redis.client.model.HostNode;
 import com.jean.redis.client.model.ListItem;
 import javafx.scene.control.TreeItem;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * @author jinshubao
@@ -24,9 +25,6 @@ public class ListService extends BaseService<List<ListItem>> {
     private TreeItem<Node> treeItem;
 
     public void restart(TreeItem<Node> treeItem) {
-        if (isRunning()) {
-            return;
-        }
         this.treeItem = treeItem;
         Node value = treeItem.getValue();
         params.put("cmd", "*");
@@ -34,7 +32,6 @@ public class ListService extends BaseService<List<ListItem>> {
             this.hostName = ((HostNode) value).getHostName();
             this.port = ((HostNode) value).getPort();
             this.auth = ((HostNode) value).getAuth();
-            this.dbIndex = 0;
             DBNode dbNode = (DBNode) value;
             this.dbIndex = dbNode.getDbIndex();
             if (value instanceof DirNode) {
@@ -50,32 +47,45 @@ public class ListService extends BaseService<List<ListItem>> {
         String cmd = (String) params.get("cmd");
         List<ListItem> result = new ArrayList<>();
         if (cmd != null) {
-            logger.debug("keys {}", cmd);
-            Set<String> keys = jedis.keys(cmd);
-            keys.stream().filter(Objects::nonNull).forEach(key -> {
-                String dataType = jedis.type(key);
-                ListItem listItem = new ListItem(hostName, port, auth, dbIndex);
-                listItem.setKey(key);
-                listItem.setType(dataType);
-                Long size = 0L;
-                if (CommonConstant.REDIS_TYPE_STRING.equalsIgnoreCase(dataType)) {
-                    size = 1L;
-                } else if (CommonConstant.REDIS_TYPE_LIST.equalsIgnoreCase(dataType)) {
-                    size = jedis.llen(key);
-                } else if (CommonConstant.REDIS_TYPE_SET.equalsIgnoreCase(dataType)) {
-                    size = jedis.scard(key);
-                } else if (CommonConstant.REDIS_TYPE_ZSET.equalsIgnoreCase(dataType)) {
-                    size = jedis.zcard(key);
-                } else if (CommonConstant.REDIS_TYPE_HASH.equalsIgnoreCase(dataType)) {
-                    size = jedis.hlen(key);
+            String cursor = "0";
+            ScanParams params = new ScanParams();
+            params.match(cmd);
+            params.count(CommonConstant.SCAN_MAX_COUNT);
+            for (; ; ) {
+                ScanResult<String> scanResult = jedis.scan(cursor, params);
+                List<String> keys = scanResult.getResult();
+                keys.stream().filter(Objects::nonNull).forEach(key -> {
+                    String dataType = jedis.type(key);
+                    ListItem listItem = new ListItem(hostName, port, auth, dbIndex);
+                    listItem.setKey(key);
+                    listItem.setType(dataType);
+                    Long size = 0L;
+                    if (CommonConstant.REDIS_TYPE_STRING.equalsIgnoreCase(dataType)) {
+                        size = 1L;
+                    } else if (CommonConstant.REDIS_TYPE_LIST.equalsIgnoreCase(dataType)) {
+                        size = jedis.llen(key);
+                    } else if (CommonConstant.REDIS_TYPE_SET.equalsIgnoreCase(dataType)) {
+                        size = jedis.scard(key);
+                    } else if (CommonConstant.REDIS_TYPE_ZSET.equalsIgnoreCase(dataType)) {
+                        size = jedis.zcard(key);
+                    } else if (CommonConstant.REDIS_TYPE_HASH.equalsIgnoreCase(dataType)) {
+                        size = jedis.hlen(key);
+                    }
+                    jedis.ttl(key);
+                    listItem.setSize(size);
+                    result.add(listItem);
+                });
+
+                if ("0".equals(scanResult.getStringCursor())) {
+                    break;
+                } else {
+                    cursor = scanResult.getStringCursor();
                 }
-                jedis.ttl(key);
-                listItem.setSize(size);
-                result.add(listItem);
-            });
+            }
         }
         return result;
     }
+
 
     public TreeItem<Node> getTreeItem() {
         return treeItem;
