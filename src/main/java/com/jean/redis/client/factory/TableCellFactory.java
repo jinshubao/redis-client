@@ -1,8 +1,8 @@
 package com.jean.redis.client.factory;
 
 
-import com.jean.redis.client.model.ListItem;
 import com.jean.redis.client.Service.DelService;
+import com.jean.redis.client.model.ListItem;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableCell;
@@ -37,24 +37,20 @@ public class TableCellFactory<T> implements Callback<TableColumn<ListItem, T>, T
             @Override
             public void updateItem(T item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
+                if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
                     getTableRow().setContextMenu(null);
                 } else {
-                    if (item == null) {
-                        setText(null);
-                    } else {
-                        String key = item.toString();
-                        setText(key);
-                    }
-                    getTableRow().setContextMenu(getMenu(item, (ListItem) getTableRow().getItem()));
+                    String key = item.toString();
+                    setText(key);
+                    getTableRow().setContextMenu(createContextMenu(item, (ListItem) getTableRow().getItem()));
                 }
             }
         };
     }
 
-    private ContextMenu getMenu(T item, ListItem data) {
+    private ContextMenu createContextMenu(T item, ListItem data) {
         ContextMenu contextMenu = new ContextMenu();
         MenuItem copy = new MenuItem("复制");
         copy.setOnAction(event -> {
@@ -63,7 +59,13 @@ public class TableCellFactory<T> implements Callback<TableColumn<ListItem, T>, T
             Clipboard.getSystemClipboard().setContent(content);
         });
         MenuItem del = new MenuItem("删除");
-        del.setOnAction(event -> delService.restart(data, data.getKey()));
+        del.setOnAction(event -> delService.restart(data.getConfig(), data.getKey()));
+
+        MenuItem setTtl = new MenuItem("设置超时时间");
+        setTtl.setOnAction(event -> {
+
+        });
+
         contextMenu.getItems().addAll(copy, del);
         return contextMenu;
     }

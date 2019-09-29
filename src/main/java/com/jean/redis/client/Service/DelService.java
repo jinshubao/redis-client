@@ -1,66 +1,50 @@
 package com.jean.redis.client.Service;
 
-import com.jean.redis.client.model.HostNode;
+import com.jean.redis.client.model.ConfigProperty;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
+import javafx.concurrent.Task;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
-
 /**
- *
  * @author jinshubao
  * @date 2016/11/25
  */
 @Service
-public class DelService extends BaseService<HostNode> {
+public class DelService extends BaseService<Void> {
     @Override
     public void restart() {
     }
 
-    private String keys;
-
-    private HostNode listItem;
-
-    private Object binding;
-
-    public void restart(HostNode listItem, String keys) {
-        assertNotRunning();
-        this.listItem = listItem;
-        this.keys = keys;
-        this.hostName = listItem.getHostName();
-        this.port = listItem.getPort();
-        this.auth = listItem.getAuth();
-        this.dbIndex = listItem.getDbIndex();
-        super.restart();
+    @Override
+    public void start() {
+        super.start();
     }
 
-    public void restart(HostNode listItem, String keys, Object binding) {
-        this.binding = binding;
-        this.restart(listItem, keys);
+    private String[] keys;
+
+
+    public void restart(ConfigProperty config, String... keys) {
+        if (!isRunning()) {
+            this.config = config;
+            this.keys = keys;
+            if (keys != null && keys.length > 0) {
+                super.restart();
+            }
+
+        }
     }
 
     @Override
-    protected HostNode task() {
-        if (keys != null) {
-            Set<String> keys = jedis.keys(this.keys);
-            int del = 0;
-            for (String key : keys) {
-                Long aLong = jedis.del(key);
-                del += aLong;
-                logger.debug("del {} {}", key, aLong == 1 ? "OK" : "FAIL");
+    protected Task<Void> createTask() {
+        return new RedisTask<Void>(this.getConfig()) {
+            @Override
+            protected Void call() throws Exception {
+                StatefulRedisConnection<String, String> redisConnection = getRedisConnection();
+                RedisCommands<String, String> redisCommands = redisConnection.sync();
+                redisCommands.del(keys);
+                return null;
             }
-            if (del == keys.size()) {
-                return listItem;
-            }
-            return null;
-        }
-        return null;
-    }
-
-    public Object getBinding() {
-        return binding;
-    }
-
-    public void setBinding(Object binding) {
-        this.binding = binding;
+        };
     }
 }

@@ -5,12 +5,8 @@ import com.jean.redis.client.entry.NodeType;
 
 public class DBNode extends HostNode implements Node {
 
-    public DBNode() {
-    }
-
-    public DBNode(String hostName, Integer port, String auth, Integer dbIndex) {
-        super(hostName, port, auth);
-        this.dbIndex = dbIndex;
+    public DBNode(ConfigProperty config) {
+        super(config);
     }
 
     @Override
@@ -20,6 +16,6 @@ public class DBNode extends HostNode implements Node {
 
     @Override
     public String toString() {
-        return "db" + dbIndex;
+        return "db" + getConfig().getDatabase();
     }
 }

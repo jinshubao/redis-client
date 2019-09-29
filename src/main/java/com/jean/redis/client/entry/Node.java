@@ -4,5 +4,5 @@ public interface Node {
 
     String toString();
 
-     NodeType getNodeType();
+    NodeType getNodeType();
 }

@@ -1,55 +1,53 @@
 package com.jean.redis.client.Service;
 
-import com.jean.redis.client.constant.CommonConstant;
-import com.jean.redis.client.model.DetailItem;
-import com.jean.redis.client.model.ListItem;
+import com.jean.redis.client.model.ConfigProperty;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
+import javafx.concurrent.Task;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author jinshubao
  * @date 2016/11/25
  */
 @Service
-public class DetailService extends BaseService<DetailItem> {
+public class DetailService extends BaseService<List<String>> {
+
+    private String key;
 
     @Override
     public void restart() {
+        if (!isRunning()) {
+            super.restart();
+        }
     }
 
-    public void restart(ListItem listItem) {
-        this.hostName = listItem.getHostName();
-        this.port = listItem.getPort();
-        this.auth = listItem.getAuth();
-        this.dbIndex = listItem.getDbIndex();
-        super.restart();
+    public void restart(ConfigProperty config, String key) {
+        if (!isRunning()) {
+            this.config = config;
+            this.key = key;
+            this.restart();
+        }
     }
-
 
     @Override
-    protected DetailItem task() {
-        ListItem model = (ListItem) params.get("item");
-        if (model == null || model.getKey() == null) {
-            return null;
-        }
-        Collection<String> collection = new ArrayList<>();
-        if (CommonConstant.REDIS_TYPE_STRING.equalsIgnoreCase(model.getType())) {
-            String value = jedis.get(model.getKey());
-            collection.add(value);
-        } else if (CommonConstant.REDIS_TYPE_LIST.equalsIgnoreCase(model.getType())) {
-            collection.addAll(jedis.lrange(model.getKey(), 0, -1));
-        } else if (CommonConstant.REDIS_TYPE_SET.equalsIgnoreCase(model.getType())) {
-            collection.addAll(jedis.smembers(model.getKey()));
-        } else if (CommonConstant.REDIS_TYPE_ZSET.equalsIgnoreCase(model.getType())) {
-            collection.addAll(jedis.zrange(model.getKey(), 0, -1));
-        } else if (CommonConstant.REDIS_TYPE_HASH.equalsIgnoreCase(model.getType())) {
-            Map<String, String> map = jedis.hgetAll(model.getKey());
-            map.forEach((key, value) -> collection.add(key + ":" + value));
-        }
-        Long ttl = jedis.ttl(model.getKey());
-        return new DetailItem(model.getKey(), model.getType(), (long) collection.size(), ttl, collection);
+    protected Task<List<String>> createTask() {
+
+        return new RedisTask<List<String>>(this.getConfig()) {
+            @Override
+            protected List<String> call() throws Exception {
+                try (StatefulRedisConnection<String, String> connection = getRedisConnection()) {
+                    RedisCommands<String, String> redisCommands = connection.sync();
+                    String value = redisCommands.get(key);
+                    Long ttl = redisCommands.ttl(key);
+                    String type = redisCommands.type(key);
+                    return Arrays.asList("key:" + key, "ttl:" + ttl, "type:" + type, "value:" + value);
+                }
+            }
+        };
     }
+
 }

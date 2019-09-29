@@ -1,40 +1,23 @@
 package com.jean.redis.client.model;
 
-import com.jean.redis.client.entry.NodeType;
-
 /**
- *
  * @author jinshubao
  * @date 2016/11/25
  */
-public class ListItem extends DirNode {
+public class ListItem {
+    private ConfigProperty config;
 
     protected String key;
     protected String type;
     protected Long size = 0L;
 
-    public ListItem() {
+
+    public ListItem(ConfigProperty config) {
+        this.config = config;
     }
 
-    public ListItem(String key, String type, Long size) {
-        this.key = key;
-        this.type = type;
-        this.size = size;
-    }
-
-    public ListItem(String hostName, Integer port, String auth, Integer dbIndex) {
-        super(hostName, port, auth, dbIndex);
-    }
-
-    public ListItem(String hostName, Integer port, String auth, Integer dbIndex, String key, String type, Long size) {
-        super(hostName, port, auth, dbIndex);
-        this.key = key;
-        this.type = type;
-        this.size = size;
-    }
-
-    public ListItem(String hostName, Integer port, String auth, Integer dbIndex, String dirName, String fullPath, String key, String type, Long size) {
-        super(hostName, port, auth, dbIndex, dirName, fullPath);
+    public ListItem(ConfigProperty config, String key, String type, Long size) {
+        this(config);
         this.key = key;
         this.type = type;
         this.size = size;
@@ -42,6 +25,10 @@ public class ListItem extends DirNode {
 
     public String getKey() {
         return key;
+    }
+
+    public ConfigProperty getConfig() {
+        return config;
     }
 
     public void setKey(String key) {
@@ -64,8 +51,9 @@ public class ListItem extends DirNode {
         this.size = size;
     }
 
+
     @Override
-    public NodeType getNodeType() {
-        return NodeType.LIST;
+    public String toString() {
+        return this.key;
     }
 }

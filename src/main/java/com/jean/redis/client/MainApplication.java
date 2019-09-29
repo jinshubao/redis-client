@@ -1,6 +1,5 @@
 package com.jean.redis.client;
 
-import com.jean.redis.client.controller.MainController;
 import javafx.application.Application;
 import javafx.application.Preloader;
 import javafx.fxml.FXMLLoader;
@@ -58,8 +57,6 @@ public class MainApplication extends Application {
 
     @Override
     public void stop() throws Exception {
-        MainController mainController = applicationContext.getBean(MainController.class);
-        mainController.close();
         applicationContext.close();
     }
 

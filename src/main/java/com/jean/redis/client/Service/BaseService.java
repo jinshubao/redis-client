@@ -1,18 +1,15 @@
 package com.jean.redis.client.Service;
 
-import com.jean.redis.client.callback.TaskCallback;
 import com.jean.redis.client.constant.CommonConstant;
+import com.jean.redis.client.model.ConfigProperty;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisURI;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.codec.StringCodec;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import redis.clients.jedis.Jedis;
-import redis.clients.util.Pool;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author jinshubao
@@ -20,113 +17,52 @@ import java.util.Map;
  */
 public abstract class BaseService<V> extends Service {
 
-    protected Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected ConfigProperty config;
 
-    @Autowired
-    public void executor(ThreadPoolTaskExecutor executor) {
-        this.setExecutor(executor);
+    public ConfigProperty getConfig() {
+        return config;
     }
 
-    protected String hostName;
-    protected Integer dbIndex;
-    protected Integer port;
-    protected String auth;
+    protected static abstract class RedisTask<V> extends Task<V> {
 
-    protected Jedis jedis;
+        protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
+        protected final ConfigProperty config;
 
-    private TaskCallback<V> successCallback;
-
-    private TaskCallback<Throwable> failedCallback;
-
-
-    protected Map<String, Object> params = new HashMap<>();
-
-    public void setParams(Map<String, Object> params) {
-        this.params.putAll(params);
-    }
-
-    public void addParams(String key, Object value) {
-        this.params.put(key, value);
-    }
-
-    private void clearParams() {
-        params.clear();
-    }
-
-    private void closeRedis() {
-        if (jedis != null) {
-            jedis.close();
+        public RedisTask(ConfigProperty config) {
+            this.config = config;
         }
-    }
 
-    protected abstract V task();
-
-    private void getConnection() {
-        Pool pool = CommonConstant.REDIS_POOL.get(hostName + "_" + port);
-        jedis = (Jedis) pool.getResource();
-        if (dbIndex != null) {
-            jedis.select(dbIndex);
+        protected StatefulRedisConnection<String, String> getRedisConnection() {
+            RedisClient redisClient = CommonConstant.REDIS_CLIENT_MAP.get(config.toString());
+            if (redisClient != null) {
+                return redisClient.connect(StringCodec.UTF8);
+            }
+            RedisURI.Builder builder = RedisURI.Builder.redis(config.getHost(), config.getPort()).withDatabase(config.getDatabase());
+            if (config.getPassword() != null) {
+                builder.withPassword(config.getPassword());
+            }
+            RedisClient client = RedisClient.create(builder.build());
+            CommonConstant.REDIS_CLIENT_MAP.put(config.toString(), client);
+            return this.getRedisConnection();
         }
-    }
 
-    @Override
-    protected Task<V> createTask() {
-        return new Task<V>() {
-            @Override
-            protected V call() throws Exception {
-                updateMessage("获取连接...");
-                getConnection();
-                updateMessage("开始执行任务...");
-                return task();
-            }
 
-            @Override
-            protected void done() {
-                super.done();
-                clean();
-                clearParams();
-                closeRedis();
-            }
-
-            @Override
-            protected void failed() {
-                super.failed();
-                updateMessage("任务执行失败...");
-                Throwable exception = getException();
-                logger.error(exception.getMessage(), exception);
-                if (failedCallback != null) {
-                    failedCallback.call(exception);
-                    failedCallback = null;
-                }
-            }
-
-            @Override
-            protected void succeeded() {
-                super.succeeded();
-                updateMessage("任务执行成功");
-                if (successCallback != null) {
-                    successCallback.call(getValue());
-                }
-                successCallback = null;
-            }
-        };
-    }
-
-    protected void clean() {
-    }
-
-    protected void setSuccessCallback(TaskCallback<V> successCallback) {
-        this.successCallback = successCallback;
-    }
-
-    protected void setFailedCallback(TaskCallback<Throwable> failedCallback) {
-        this.failedCallback = failedCallback;
-    }
-
-    protected void assertNotRunning() {
-        if (isRunning()) {
-            throw new RuntimeException("不能重复执行任务...");
+        @Override
+        protected void done() {
+            updateMessage("任务执行完成.");
         }
+
+        @Override
+        protected void failed() {
+            updateMessage("任务执行失败...");
+        }
+
+        @Override
+        protected void succeeded() {
+            updateMessage("任务执行成功");
+        }
+
+
     }
 }

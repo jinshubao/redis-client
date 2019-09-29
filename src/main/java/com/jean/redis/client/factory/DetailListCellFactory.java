@@ -1,7 +1,6 @@
 package com.jean.redis.client.factory;
 
 
-import com.jean.redis.client.Service.DelService;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -9,44 +8,42 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.DataFormat;
 import javafx.util.Callback;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- *
  * @author jinshubao
  * @date 2016/11/25
  */
-@Component
-public class ListCellFactory implements Callback<ListView<String>, ListCell<String>> {
-
-    @Autowired
-    DelService delService;
+public class DetailListCellFactory<V> implements Callback<ListView<V>, ListCell<V>> {
 
 
     @Override
-    public ListCell<String> call(ListView<String> param) {
-        return new ListCell<String>() {
+    public ListCell<V> call(ListView<V> param) {
+        return new ListCell<V>() {
             @Override
-            public void updateItem(String item, boolean empty) {
+            public void updateItem(V item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty) {
                     setText(null);
                     setGraphic(null);
                     setContextMenu(null);
-                } else {
-                    setText(item == null ? "" : item);
-                    setContextMenu(getMenu(param));
+                    return;
                 }
+                if (Objects.isNull(item)) {
+                    setText(null);
+                } else {
+                    setText(item.toString());
+                }
+                setContextMenu(createContextMenu(param));
             }
         };
     }
 
-    private ContextMenu getMenu(ListView<String> param) {
+    private ContextMenu createContextMenu(ListView<V> param) {
         ContextMenu contextMenu = new ContextMenu();
         MenuItem copy = new MenuItem("复制");
         copy.setOnAction(event -> {

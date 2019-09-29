@@ -9,13 +9,13 @@ import com.jean.redis.client.entry.NodeType;
 public class RootNode implements Node {
     private String name;
 
+    public RootNode(String name) {
+        this.name = name;
+    }
+
     @Override
     public NodeType getNodeType() {
         return NodeType.ROOT;
-    }
-
-    public RootNode(String name) {
-        this.name = name;
     }
 
     @Override
