@@ -32,18 +32,18 @@ import java.util.ResourceBundle;
 @SuppressWarnings("unchecked")
 public class MainController implements Initializable, Closeable {
 
-    static final Logger logger = LoggerFactory.getLogger(MainController.class);
+    private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
     @FXML
     public TextField keyword;
     @FXML
     public Button search;
     @FXML
-    public ListView<String> detail;
-    @FXML
     public TreeView<Node> tree;
     @FXML
     public TableView<ListItem> table;
+    @FXML
+    public ListView<String> detail;
     @FXML
     public Label message;
     @FXML

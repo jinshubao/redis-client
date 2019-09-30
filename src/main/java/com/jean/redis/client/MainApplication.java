@@ -9,21 +9,31 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 @ComponentScan
 public class MainApplication extends Application {
 
+    @Value("${spring.application.name}")
+    private String applicationName;
+
+    @Value("${spring.application.version}")
+    private String applicationVersion;
+
     private ConfigurableApplicationContext applicationContext;
 
     @Override
     public void init() throws Exception {
+        List<String> params = getParameters().getRaw();
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
-        applicationContext = new AnnotationConfigApplicationContext(MainApplication.class);
+        applicationContext = SpringApplication.run(MainApplication.class, params.toArray(new String[0]));
         applicationContext.getAutowireCapableBeanFactory().autowireBean(this);
     }
 
@@ -35,9 +45,7 @@ public class MainApplication extends Application {
         Parent root = loader.load(getClass().getResourceAsStream("/fxml/Scene.fxml"));
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
-        String name = applicationContext.getEnvironment().getProperty("spring.application.name", "redis client");
-        String version = applicationContext.getEnvironment().getProperty("spring.application.version", "1.0");
-        stage.setTitle(name + " - " + version);
+        stage.setTitle(applicationName + " - " + applicationVersion);
         stage.getIcons().add(new Image(getClass().getResourceAsStream("/image/dbs_redis_32px.png")));
         stage.setScene(scene);
         stage.show();

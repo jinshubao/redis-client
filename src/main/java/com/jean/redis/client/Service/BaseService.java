@@ -50,19 +50,17 @@ public abstract class BaseService<V> extends Service {
 
         @Override
         protected void done() {
-            updateMessage("任务执行完成.");
+            updateMessage("执行完成.");
         }
 
         @Override
         protected void failed() {
-            updateMessage("任务执行失败...");
+            updateMessage("执行失败...");
         }
 
         @Override
         protected void succeeded() {
-            updateMessage("任务执行成功");
+            updateMessage("执行成功.");
         }
-
-
     }
 }
