@@ -6,12 +6,19 @@ import io.lettuce.core.api.sync.RedisCommands;
 import javafx.concurrent.Task;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.Executor;
+
 /**
  * @author jinshubao
  * @date 2016/11/25
  */
 @Service
 public class DelService extends BaseService<Void> {
+
+    public DelService(Executor executor) {
+        super(executor);
+    }
+
     @Override
     public void restart() {
     }
@@ -37,12 +44,16 @@ public class DelService extends BaseService<Void> {
 
     @Override
     protected Task<Void> createTask() {
-        return new RedisTask<Void>(this.getConfig()) {
+        return new RedisBaseTask<Void>(this.getConfig()) {
             @Override
             protected Void call() throws Exception {
-                StatefulRedisConnection<String, String> redisConnection = getRedisConnection();
-                RedisCommands<String, String> redisCommands = redisConnection.sync();
-                redisCommands.del(keys);
+                byte[][] keyBytes = new byte[keys.length][];
+                for (int i = 0; i < keys.length; i++) {
+                    keyBytes[i] = keys[i].getBytes();
+                }
+                StatefulRedisConnection<byte[], byte[]> redisConnection = getRedisConnection();
+                RedisCommands<byte[], byte[]> redisCommands = redisConnection.sync();
+                redisCommands.del(keyBytes);
                 return null;
             }
         };

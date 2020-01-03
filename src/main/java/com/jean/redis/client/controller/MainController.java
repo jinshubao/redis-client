@@ -1,26 +1,27 @@
 package com.jean.redis.client.controller;
 
-import com.jean.redis.client.Service.DetailService;
-import com.jean.redis.client.Service.ListService;
+import com.jean.redis.client.Service.RedisKeyListService;
+import com.jean.redis.client.Service.RedisValueService;
 import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.entry.Node;
-import com.jean.redis.client.factory.DetailListCellFactory;
-import com.jean.redis.client.factory.TableCellFactory;
-import com.jean.redis.client.factory.TreeCellFactory;
+import com.jean.redis.client.factory.RedisKeyTableKeyColumnCellFactory;
+import com.jean.redis.client.factory.RedisKeyTableRowFactory;
+import com.jean.redis.client.factory.RedisNodeTreeCellFactory;
+import com.jean.redis.client.factory.RedisValueListCellFactory;
 import com.jean.redis.client.model.DBNode;
-import com.jean.redis.client.model.ListItem;
+import com.jean.redis.client.model.RedisKey;
+import com.jean.redis.client.model.RedisValue;
 import com.jean.redis.client.model.RootNode;
-import io.lettuce.core.AbstractRedisClient;
-import javafx.beans.property.SimpleObjectProperty;
+import io.lettuce.core.RedisClient;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Controller;
 
-import java.io.Closeable;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -30,7 +31,7 @@ import java.util.ResourceBundle;
  */
 @Controller
 @SuppressWarnings("unchecked")
-public class MainController implements Initializable, Closeable {
+public class MainController implements Initializable, InitializingBean, DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
@@ -41,9 +42,17 @@ public class MainController implements Initializable, Closeable {
     @FXML
     public TreeView<Node> tree;
     @FXML
-    public TableView<ListItem> table;
+    public TableView<RedisKey> table;
     @FXML
-    public ListView<String> detail;
+    public TableColumn<RedisKey, byte[]> keyColumn;
+    @FXML
+    public TableColumn<RedisKey, String> typeColumn;
+    @FXML
+    public TableColumn<RedisKey, Number> sizeColumn;
+    @FXML
+    public TableColumn<RedisKey, Number> ttlColumn;
+    @FXML
+    public ListView<byte[]> detail;
     @FXML
     public Label message;
     @FXML
@@ -53,18 +62,30 @@ public class MainController implements Initializable, Closeable {
     @FXML
     public MenuItem newConnection;
     @FXML
-    public MenuItem exit;
-    @FXML
     public MenuItem about;
 
-    @Autowired
-    private ListService listService;
+    private final RedisKeyListService redisKeyListService;
 
-    @Autowired
-    private DetailService detailService;
+    private final RedisValueService redisValueService;
 
-    @Autowired
-    private TableCellFactory tableCellFactory;
+    private final RedisKeyTableRowFactory redisKeyTableRowFactory;
+
+    private final RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory;
+
+    private final RedisValueListCellFactory redisValueListCellFactory;
+
+    public MainController(RedisKeyListService redisKeyListService,
+                          RedisValueService redisValueService,
+                          RedisKeyTableRowFactory redisKeyTableRowFactory,
+                          RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory,
+                          RedisValueListCellFactory redisValueListCellFactory) {
+        this.redisKeyListService = redisKeyListService;
+        this.redisValueService = redisValueService;
+        this.redisKeyTableRowFactory = redisKeyTableRowFactory;
+        this.redisKeyTableKeyColumnCellFactory = redisKeyTableKeyColumnCellFactory;
+        this.redisValueListCellFactory = redisValueListCellFactory;
+        logger.debug("main controller constructed...");
+    }
 
     /**
      * init
@@ -79,100 +100,103 @@ public class MainController implements Initializable, Closeable {
 
         });
 
-        exit.setOnAction(event -> {
-        });
-
         about.setOnAction(event -> {
 
         });
-        search.disableProperty().bind(listService.runningProperty().or(detailService.runningProperty()));
+        search.disableProperty().bind(redisKeyListService.runningProperty().or(redisValueService.runningProperty()));
         search.setOnAction(event -> {
 
         });
 
-        tree.setCellFactory(new TreeCellFactory());
+        tree.setCellFactory(new RedisNodeTreeCellFactory());
         tree.setRoot(new TreeItem<>(new RootNode("服务器列表")));
         tree.getRoot().setExpanded(true);
 
         //切换数据库
         tree.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             detail.getItems().clear();
-            if (newValue == null) {
+            if (newValue != null) {
+                Node model = newValue.getValue();
+                dbInfo.setText(model.toString());
+                if (model instanceof DBNode) {
+                    redisKeyListService.restart(((DBNode) model).getConfig(), "*", 100L);
+                }
+            } else {
                 dbInfo.setText(null);
-                return;
-            }
-            Node model = newValue.getValue();
-            dbInfo.setText(model.toString());
-            if (model instanceof DBNode) {
-                listService.restart(((DBNode) model).getConfig(), "*", 100L);
             }
         });
-//        tree.disableProperty().bind(listService.runningProperty());
 
-        table.getColumns().get(0).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getKey()));
-        table.getColumns().get(1).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getType()));
-        table.getColumns().get(2).setCellValueFactory(param -> new SimpleObjectProperty(param.getValue().getSize()));
+        keyColumn.setCellFactory(redisKeyTableKeyColumnCellFactory);
+        keyColumn.setCellValueFactory(param -> param.getValue().keyProperty());
+        typeColumn.setCellValueFactory(param -> param.getValue().typeProperty());
+        sizeColumn.setCellValueFactory(param -> param.getValue().sizeProperty());
+        ttlColumn.setCellValueFactory(param -> param.getValue().ttlProperty());
+        table.setRowFactory(redisKeyTableRowFactory);
+
         table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                detailService.restart(newValue.getConfig(), newValue.getKey());
+                redisValueService.restart(newValue.getConfig(), newValue.getKey());
             }
         });
-        table.getColumns().get(0).setCellFactory(tableCellFactory);
         ProgressIndicator listProgress = new ProgressIndicator(-1D);
         listProgress.setMaxHeight(50D);
         listProgress.setMaxWidth(50D);
-        listProgress.visibleProperty().bind(listService.runningProperty());
+        listProgress.visibleProperty().bind(redisKeyListService.runningProperty());
         table.setPlaceholder(listProgress);
 
         ProgressIndicator detailProgress = new ProgressIndicator(-1D);
         detailProgress.setMaxHeight(50D);
         detailProgress.setMaxWidth(50D);
-        detailProgress.visibleProperty().bind(detailService.runningProperty());
+        detailProgress.visibleProperty().bind(redisValueService.runningProperty());
+
+        detail.setCellFactory(redisValueListCellFactory);
         detail.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        detail.setCellFactory(new DetailListCellFactory<>());
         detail.setPlaceholder(detailProgress);
 
-        listService.setOnScheduled(event -> {
+        redisKeyListService.setOnScheduled(event -> {
             table.getItems().clear();
             message.textProperty().unbind();
-            message.textProperty().bind(listService.messageProperty());
+            message.textProperty().bind(redisKeyListService.messageProperty());
         });
-        listService.setOnSucceeded(event -> {
-            List<String> list = (List<String>) listService.getValue();
-            list.forEach(item -> table.getItems().add(new ListItem(listService.getConfig(), item, "", 0L)));
+        redisKeyListService.setOnSucceeded(event -> {
+            if (!table.getItems().isEmpty()) {
+                table.getItems().clear();
+            }
+            List<RedisKey> value = redisKeyListService.getValue();
+            table.getItems().addAll(value);
         });
 
-        detailService.setOnScheduled(event -> {
+        redisValueService.setOnScheduled(event -> {
             detail.getItems().clear();
             message.textProperty().unbind();
-            message.textProperty().bind(detailService.messageProperty());
+            message.textProperty().bind(redisValueService.messageProperty());
         });
 
-        detailService.setOnSucceeded(event -> {
-            this.detail.getItems().addAll((List<String>) detailService.getValue());
+        redisValueService.setOnSucceeded(event -> {
+            if (!detail.getItems().isEmpty()) {
+                detail.getItems().clear();
+            }
+            RedisValue value = redisValueService.getValue();
+            detail.getItems().addAll(value.toList());
         });
-
-        //读配置文件
-        this.initConfig();
     }
 
 
     /**
-     * 主程序退出回调
+     * 初始化
      */
-    public void initConfig() {
-        //TODO 保存配置
-
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        logger.debug("main controller afterPropertiesSet...");
     }
-
 
     /**
      * 主程序退出回调
      */
     @Override
-    public void close() {
-        //TODO 保存配置
-        logger.debug("main controller close...");
-        CommonConstant.REDIS_CLIENT_MAP.values().forEach(AbstractRedisClient::shutdown);
+    public void destroy() throws Exception {
+        logger.debug("main controller destroy...");
+        CommonConstant.REDIS_CLIENT_MAP.values().forEach(RedisClient::shutdown);
     }
+
 }

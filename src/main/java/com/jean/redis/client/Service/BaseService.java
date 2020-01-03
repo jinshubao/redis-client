@@ -5,17 +5,19 @@ import com.jean.redis.client.model.ConfigProperty;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.codec.StringCodec;
+import io.lettuce.core.codec.ByteArrayCodec;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executor;
+
 /**
  * @author jinshubao
  * @date 2016/11/25
  */
-public abstract class BaseService<V> extends Service {
+public abstract class BaseService<V> extends Service<V> {
 
     protected ConfigProperty config;
 
@@ -23,20 +25,24 @@ public abstract class BaseService<V> extends Service {
         return config;
     }
 
-    protected static abstract class RedisTask<V> extends Task<V> {
+    public BaseService(Executor executor) {
+        this.setExecutor(executor);
+    }
+
+    protected static abstract class RedisBaseTask<V> extends Task<V> {
 
         protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
         protected final ConfigProperty config;
 
-        public RedisTask(ConfigProperty config) {
+        public RedisBaseTask(ConfigProperty config) {
             this.config = config;
         }
 
-        protected StatefulRedisConnection<String, String> getRedisConnection() {
+        protected StatefulRedisConnection<byte[], byte[]> getRedisConnection() {
             RedisClient redisClient = CommonConstant.REDIS_CLIENT_MAP.get(config.toString());
             if (redisClient != null) {
-                return redisClient.connect(StringCodec.UTF8);
+                return redisClient.connect(ByteArrayCodec.INSTANCE);
             }
             RedisURI.Builder builder = RedisURI.Builder.redis(config.getHost(), config.getPort()).withDatabase(config.getDatabase());
             if (config.getPassword() != null) {

@@ -12,6 +12,7 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.util.Callback;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,29 +21,35 @@ import java.util.Objects;
 /**
  * Created by jinshubao on 2016/11/25.
  */
-public class TreeCellFactory implements Callback<TreeView<Node>, TreeCell<Node>> {
+@Component
+public class RedisNodeTreeCellFactory implements Callback<TreeView<Node>, TreeCell<Node>> {
 
     @Override
     public TreeCell<Node> call(TreeView<Node> param) {
+        return new RedisServerTreeCell();
+    }
 
-        return new TreeCell<Node>() {
-            @Override
-            protected void updateItem(Node item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                    setContextMenu(null);
-                } else {
-                    setText(item.toString());
-                    TreeItem<Node> treeItem = getTreeItem();
-                    ContextMenu contextMenu = TreeContextMenuManager.createContextMenu(treeItem, item);
-                    if (contextMenu != null && !contextMenu.getItems().isEmpty()) {
-                        setContextMenu(contextMenu);
-                    }
+    static class RedisServerTreeCell extends TreeCell<Node> {
+
+        public RedisServerTreeCell() {
+
+        }
+
+        @Override
+        protected void updateItem(Node item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+                setContextMenu(null);
+            } else {
+                setText(item.toString());
+                ContextMenu contextMenu = TreeContextMenuManager.createContextMenu(getTreeItem(), item);
+                if (contextMenu != null && !contextMenu.getItems().isEmpty()) {
+                    setContextMenu(contextMenu);
                 }
             }
-        };
+        }
     }
 
 
