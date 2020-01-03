@@ -38,12 +38,12 @@ public class RootContextMenu extends AbstractTreeContextMenu {
     }
 
     private Dialog<ButtonType> createDialog() {
-        TextField host = new TextField("10.52.2.61");
+        TextField host = new TextField("127.0.0.1");
         host.setId("host");
         TextField port = new TextField("6379");
         port.setId("port");
         PasswordField auth = new PasswordField();
-        auth.setText("eop%Z!bzeeclx$@5");
+        auth.setText(null);
         auth.setId("auth");
 
 
