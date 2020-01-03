@@ -1,6 +1,7 @@
 package com.jean.redis.client.controller;
 
 import com.jean.redis.client.Service.RedisKeyListService;
+import com.jean.redis.client.Service.RedisServerInfoService;
 import com.jean.redis.client.Service.RedisValueService;
 import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.entry.Node;
@@ -8,10 +9,7 @@ import com.jean.redis.client.factory.RedisKeyTableKeyColumnCellFactory;
 import com.jean.redis.client.factory.RedisKeyTableRowFactory;
 import com.jean.redis.client.factory.RedisNodeTreeCellFactory;
 import com.jean.redis.client.factory.RedisValueListCellFactory;
-import com.jean.redis.client.model.DBNode;
-import com.jean.redis.client.model.RedisKey;
-import com.jean.redis.client.model.RedisValue;
-import com.jean.redis.client.model.RootNode;
+import com.jean.redis.client.model.*;
 import io.lettuce.core.RedisClient;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -20,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import java.net.URL;
@@ -64,6 +63,9 @@ public class MainController implements Initializable, InitializingBean, Disposab
     @FXML
     public MenuItem about;
 
+    @Autowired
+    private RedisServerInfoService redisServerInfoService;
+
     private final RedisKeyListService redisKeyListService;
 
     private final RedisValueService redisValueService;
@@ -105,7 +107,10 @@ public class MainController implements Initializable, InitializingBean, Disposab
         });
         search.disableProperty().bind(redisKeyListService.runningProperty().or(redisValueService.runningProperty()));
         search.setOnAction(event -> {
-
+            Node value = tree.getSelectionModel().getSelectedItem().getValue();
+            if (value instanceof HostNode) {
+                redisServerInfoService.restart(((HostNode) value).getConfig());
+            }
         });
 
         tree.setCellFactory(new RedisNodeTreeCellFactory());
