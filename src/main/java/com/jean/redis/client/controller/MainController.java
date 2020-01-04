@@ -4,12 +4,14 @@ import com.jean.redis.client.Service.RedisKeyListService;
 import com.jean.redis.client.Service.RedisServerInfoService;
 import com.jean.redis.client.Service.RedisValueService;
 import com.jean.redis.client.constant.CommonConstant;
-import com.jean.redis.client.entry.Node;
+import com.jean.redis.client.dialog.RedisServerInfoDialog;
 import com.jean.redis.client.factory.RedisKeyTableKeyColumnCellFactory;
 import com.jean.redis.client.factory.RedisKeyTableRowFactory;
-import com.jean.redis.client.factory.RedisNodeTreeCellFactory;
+import com.jean.redis.client.factory.RedisTreeCellFactory;
 import com.jean.redis.client.factory.RedisValueListCellFactory;
-import com.jean.redis.client.model.*;
+import com.jean.redis.client.model.RedisKey;
+import com.jean.redis.client.item.RedisRootItem;
+import com.jean.redis.client.model.RedisValue;
 import io.lettuce.core.RedisClient;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -18,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import java.net.URL;
@@ -39,7 +40,7 @@ public class MainController implements Initializable, InitializingBean, Disposab
     @FXML
     public Button search;
     @FXML
-    public TreeView<Node> tree;
+    public TreeView<Object> tree;
     @FXML
     public TableView<RedisKey> table;
     @FXML
@@ -63,8 +64,7 @@ public class MainController implements Initializable, InitializingBean, Disposab
     @FXML
     public MenuItem about;
 
-    @Autowired
-    private RedisServerInfoService redisServerInfoService;
+    private final RedisServerInfoService redisServerInfoService;
 
     private final RedisKeyListService redisKeyListService;
 
@@ -80,13 +80,14 @@ public class MainController implements Initializable, InitializingBean, Disposab
                           RedisValueService redisValueService,
                           RedisKeyTableRowFactory redisKeyTableRowFactory,
                           RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory,
-                          RedisValueListCellFactory redisValueListCellFactory) {
+                          RedisValueListCellFactory redisValueListCellFactory, RedisServerInfoService redisServerInfoService) {
         this.redisKeyListService = redisKeyListService;
         this.redisValueService = redisValueService;
         this.redisKeyTableRowFactory = redisKeyTableRowFactory;
         this.redisKeyTableKeyColumnCellFactory = redisKeyTableKeyColumnCellFactory;
         this.redisValueListCellFactory = redisValueListCellFactory;
         logger.debug("main controller constructed...");
+        this.redisServerInfoService = redisServerInfoService;
     }
 
     /**
@@ -107,24 +108,21 @@ public class MainController implements Initializable, InitializingBean, Disposab
         });
         search.disableProperty().bind(redisKeyListService.runningProperty().or(redisValueService.runningProperty()));
         search.setOnAction(event -> {
-            Node value = tree.getSelectionModel().getSelectedItem().getValue();
-            if (value instanceof HostNode) {
-                redisServerInfoService.restart(((HostNode) value).getConfig());
-            }
+
         });
 
-        tree.setCellFactory(new RedisNodeTreeCellFactory());
-        tree.setRoot(new TreeItem<>(new RootNode("服务器列表")));
+        tree.setCellFactory(new RedisTreeCellFactory());
+        tree.setRoot(new RedisRootItem("服务器列表"));
         tree.getRoot().setExpanded(true);
 
         //切换数据库
         tree.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            detail.getItems().clear();
             if (newValue != null) {
-                Node model = newValue.getValue();
-                dbInfo.setText(model.toString());
-                if (model instanceof DBNode) {
-                    redisKeyListService.restart(((DBNode) model).getConfig(), "*", 100L);
+                Object value = newValue.getValue();
+                if (value != null) {
+                    dbInfo.setText(value.toString());
+                } else {
+                    dbInfo.setText(null);
                 }
             } else {
                 dbInfo.setText(null);
@@ -184,6 +182,12 @@ public class MainController implements Initializable, InitializingBean, Disposab
             RedisValue value = redisValueService.getValue();
             detail.getItems().addAll(value.toList());
         });
+
+        redisServerInfoService.setOnSucceeded(event -> {
+            String value = redisServerInfoService.getValue();
+            new RedisServerInfoDialog(value).showAndWait();
+        });
+
     }
 
 

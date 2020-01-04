@@ -1,8 +1,8 @@
 package com.jean.redis.client.dialog;
 
 import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.util.ResourceLoader;
 import javafx.application.Platform;
-import javafx.beans.NamedArg;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -27,7 +27,7 @@ public class CreateRedisServerDialog extends Dialog<RedisServerProperty> {
 
     private final GridPane grid;
 
-    public CreateRedisServerDialog(@NamedArg("defaultValue") RedisServerProperty defaultValue) {
+    public CreateRedisServerDialog(RedisServerProperty defaultValue) {
 
         final DialogPane dialogPane = getDialogPane();
 
@@ -60,7 +60,7 @@ public class CreateRedisServerDialog extends Dialog<RedisServerProperty> {
         this.setTitle("添加服务器");
         this.initModality(Modality.APPLICATION_MODAL);
         Stage stage = (Stage) dialogPane.getScene().getWindow();
-        stage.getIcons().add(new Image(this.getClass().getResourceAsStream("/image/dbs_redis_24px.png")));
+        stage.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_24px.png")));
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         //设置默认值
@@ -99,5 +99,13 @@ public class CreateRedisServerDialog extends Dialog<RedisServerProperty> {
         grid.add(passwordField, 1, 2);
         getDialogPane().setContent(grid);
         Platform.runLater(hostFiled::requestFocus);
+    }
+
+    public static CreateRedisServerDialog newInstance(RedisServerProperty defaultValue) {
+        return new CreateRedisServerDialog(defaultValue);
+    }
+
+    public static CreateRedisServerDialog newInstance() {
+        return new CreateRedisServerDialog(null);
     }
 }

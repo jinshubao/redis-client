@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.Executor;
 
 @Component
-public class RedisServerInfoService extends BaseService {
+public class RedisServerInfoService extends BaseService<String> {
 
     public RedisServerInfoService(Executor executor) {
         super(executor);
@@ -18,20 +18,18 @@ public class RedisServerInfoService extends BaseService {
     public void restart(ConfigProperty config) {
         if (!isRunning()) {
             this.config = config;
-            super.start();
+            super.restart();
         }
     }
 
     @Override
-    protected Task createTask() {
-        return new RedisBaseTask(getConfig()) {
+    protected Task<String> createTask() {
+        return new RedisBaseTask<String>(getConfig()) {
             @Override
-            protected Object call() throws Exception {
+            protected String call() throws Exception {
                 StatefulRedisConnection redisConnection = getRedisConnection();
                 RedisCommands redisCommands = redisConnection.sync();
-                String info = redisCommands.info();
-                System.out.println(info);
-                return null;
+                return redisCommands.info();
             }
         };
     }

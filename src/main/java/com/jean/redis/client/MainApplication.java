@@ -1,5 +1,6 @@
 package com.jean.redis.client;
 
+import com.jean.redis.client.util.ResourceLoader;
 import javafx.application.Application;
 import javafx.application.Preloader;
 import javafx.fxml.FXMLLoader;
@@ -29,12 +30,14 @@ public class MainApplication extends Application {
 
     private ConfigurableApplicationContext applicationContext;
 
+
     @Override
     public void init() throws Exception {
         List<String> params = getParameters().getRaw();
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
         applicationContext = SpringApplication.run(MainApplication.class, params.toArray(new String[0]));
         applicationContext.getAutowireCapableBeanFactory().autowireBean(this);
+
     }
 
     @Override
@@ -42,11 +45,11 @@ public class MainApplication extends Application {
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_START, this));
         FXMLLoader loader = new FXMLLoader();
         loader.setControllerFactory(param -> applicationContext.getBean(param));
-        Parent root = loader.load(getClass().getResourceAsStream("/fxml/Scene.fxml"));
+        Parent root = loader.load(ResourceLoader.loadAsStream("/fxml/Scene.fxml"));
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
         stage.setTitle(applicationName + " - " + applicationVersion);
-        stage.getIcons().add(new Image(getClass().getResourceAsStream("/image/dbs_redis_32px.png")));
+        stage.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_32px.png")));
         stage.setScene(scene);
         stage.show();
         stage.setOnCloseRequest(event -> {
@@ -54,7 +57,7 @@ public class MainApplication extends Application {
             dialog.setHeaderText(null);
             dialog.setTitle("退出提示");
             Stage sta = (Stage) dialog.getDialogPane().getScene().getWindow();
-            sta.getIcons().add(new Image(this.getClass().getResourceAsStream("/image/dbs_redis_24px.png")));
+            sta.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_24px.png")));
             dialog.showAndWait().ifPresent(buttonType -> {
                 if (buttonType != ButtonType.OK) {
                     event.consume();

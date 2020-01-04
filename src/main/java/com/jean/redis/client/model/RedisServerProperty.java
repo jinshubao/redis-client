@@ -47,4 +47,10 @@ public class RedisServerProperty {
     public void setPassword(String password) {
         this.password.set(password);
     }
+
+
+    @Override
+    public String toString() {
+        return this.getHost() + ":" + this.getPort();
+    }
 }
