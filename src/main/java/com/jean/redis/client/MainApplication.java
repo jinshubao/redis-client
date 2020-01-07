@@ -37,7 +37,6 @@ public class MainApplication extends Application {
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
         applicationContext = SpringApplication.run(MainApplication.class, params.toArray(new String[0]));
         applicationContext.getAutowireCapableBeanFactory().autowireBean(this);
-
     }
 
     @Override

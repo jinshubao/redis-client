@@ -1,70 +1,61 @@
 package com.jean.redis.client.model;
 
-import com.jean.redis.client.constant.CommonConstant;
+import javafx.beans.property.*;
 
-import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
 
-public class RedisValue {
+public abstract class RedisValue<V> {
 
-    private static final String HASH_SP = ":";
+    protected LongProperty ttl = new SimpleLongProperty(this, "ttl");
 
-    private static final byte[] HASH_SP_BYTES = HASH_SP.getBytes();
+    protected ObjectProperty<byte[]> key = new SimpleObjectProperty<>(this, "key");
 
-    protected long ttl;
+    protected ObjectProperty<V> value = new SimpleObjectProperty<>(this, " value");
 
-    protected String type;
-
-    protected byte[] key;
-
-    protected Object value;
-
-    public RedisValue(byte[] key, Object value, String type, long ttl) {
-        this.key = key;
-        this.value = value;
-        this.type = type;
-        this.ttl = ttl;
+    public RedisValue(byte[] key, V value, long ttl) {
+        this.key.set(key);
+        this.value.set(value);
+        this.ttl.set(ttl);
     }
 
-
     public long getTtl() {
+        return ttl.get();
+    }
+
+    public LongProperty ttlProperty() {
         return ttl;
     }
 
-    public String getType() {
-        return type;
+    public void setTtl(long ttl) {
+        this.ttl.set(ttl);
     }
 
-    public Object getValue() {
+    public byte[] getKey() {
+        return key.get();
+    }
+
+    public ObjectProperty<byte[]> keyProperty() {
+        return key;
+    }
+
+    public void setKey(byte[] key) {
+        this.key.set(key);
+    }
+
+    public V getValue() {
+        return value.get();
+    }
+
+    public ObjectProperty<V> valueProperty() {
         return value;
     }
 
+    public void setValue(V value) {
+        this.value.set(value);
+    }
+
     public Collection<byte[]> toList() {
-        if (CommonConstant.KeyType.STRING.equals(this.type)) {
-            List<byte[]> list = new ArrayList<>(1);
-            list.add((byte[]) value);
-            return list;
-        }
-        if (CommonConstant.KeyType.SET.equals(this.type)) {
-            return (Set<byte[]>) value;
-        } else if (CommonConstant.KeyType.ZSET.equals(type)) {
-            return (List<byte[]>) value;
-        }
-        if (CommonConstant.KeyType.LIST.equals(type)) {
-            return (List<byte[]>) value;
-        }
-        if (CommonConstant.KeyType.HASH.equals(type)) {
-            Map<byte[], byte[]> hash = (Map<byte[], byte[]>) value;
-            List<byte[]> list = new ArrayList<>(hash.size());
-            hash.forEach((key, value) -> {
-                ByteBuffer buffer = ByteBuffer.allocate(key.length + value.length + HASH_SP_BYTES.length);
-                buffer.put(key);
-                buffer.put(HASH_SP_BYTES);
-                buffer.put(value);
-                list.add(buffer.array());
-            });
-            return list;
-        }
         return Collections.emptyList();
     }
 }

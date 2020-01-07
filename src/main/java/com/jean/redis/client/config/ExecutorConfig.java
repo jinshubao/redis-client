@@ -3,7 +3,7 @@ package com.jean.redis.client.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -11,10 +11,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Configuration
 public class ExecutorConfig {
 
-    private static final int POOL_SIZE = 3;
+    private static final int POOL_SIZE = 10;
 
     @Bean
-    Executor executor() {
+    ExecutorService executor() {
         return Executors.newFixedThreadPool(POOL_SIZE, new ThreadFactory() {
 
             final AtomicInteger threadNumber = new AtomicInteger(1);

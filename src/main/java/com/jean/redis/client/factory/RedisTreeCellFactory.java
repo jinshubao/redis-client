@@ -21,7 +21,6 @@ public class RedisTreeCellFactory implements Callback<TreeView<Object>, TreeCell
 
     @Override
     public TreeCell<Object> call(TreeView<Object> param) {
-        logger.debug("new tree cell");
         return new RedisServerTreeCell();
     }
 

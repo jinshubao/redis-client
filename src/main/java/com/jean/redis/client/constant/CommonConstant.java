@@ -1,9 +1,15 @@
 package com.jean.redis.client.constant;
 
+import com.jean.redis.client.model.RedisDatabaseProperty;
+import com.jean.redis.client.model.RedisKey;
 import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import org.apache.commons.pool2.ObjectPool;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author jinshubao
@@ -11,8 +17,16 @@ import java.util.Map;
  */
 public class CommonConstant {
 
+    public static Map<RedisDatabaseProperty, List<RedisKey>> GLOBAL_CACHE = new HashMap<>();
 
-    public static Map<String, RedisClient> REDIS_CLIENT_MAP = new HashMap<>();
+    public static final Map<String, RedisClient> GLOBAL_REDIS_CLIENT_CACHE = new ConcurrentHashMap<>();
+
+    public static final Map<String, ObjectPool<StatefulRedisConnection<byte[], byte[]>>> GLOBAL_REDIS_CONNECTION_POOL_CACHE = new HashMap<>();
+
+
+    public static ObjectPool<StatefulRedisConnection<byte[], byte[]>> getConnectionPool(String server) {
+        return GLOBAL_REDIS_CONNECTION_POOL_CACHE.get(server);
+    }
 
 
     public static class KeyType {

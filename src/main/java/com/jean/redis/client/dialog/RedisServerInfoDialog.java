@@ -14,12 +14,13 @@ import javafx.stage.Stage;
  */
 public class RedisServerInfoDialog extends Dialog<Void> {
 
-    public RedisServerInfoDialog(String defaultValue) {
+    private final TextArea textArea;
+
+    public RedisServerInfoDialog() {
+        this.textArea = new TextArea();
         DialogPane dialogPane = getDialogPane();
-        TextArea textArea = new TextArea();
         textArea.setPrefHeight(400.0);
         textArea.setEditable(false);
-        textArea.setText(defaultValue);
         this.setTitle("服务器信息");
         this.setHeaderText("服务器信息");
         this.initModality(Modality.APPLICATION_MODAL);
@@ -27,5 +28,14 @@ public class RedisServerInfoDialog extends Dialog<Void> {
         stage.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_24px.png")));
         getDialogPane().setContent(textArea);
         dialogPane.getButtonTypes().addAll(ButtonType.CLOSE);
+    }
+
+    public TextArea getTextArea() {
+        return textArea;
+    }
+
+
+    public static RedisServerInfoDialog newInstance() {
+        return new RedisServerInfoDialog();
     }
 }

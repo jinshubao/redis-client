@@ -1,60 +1,62 @@
 package com.jean.redis.client.item;
 
-import com.jean.redis.client.model.RedisDatabaseProperty;
+import com.jean.redis.client.handler.RedisServerItemMenuActionHandler;
 import com.jean.redis.client.model.RedisServerProperty;
-import javafx.collections.ObservableList;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 
 public class RedisServerItem extends TreeItem implements ContextMenuable {
 
+    private BooleanProperty isOpen = new SimpleBooleanProperty(this, "isOpen");
+
     private final ContextMenu contextMenu;
 
-    public RedisServerItem(RedisServerProperty value) {
-        super(value);
-        MenuItem openItem = new MenuItem("打开连接");
-        openItem.setOnAction(t -> this.openConnection());
-        MenuItem closeItem = new MenuItem("关闭连接");
-        closeItem.setOnAction(t -> this.closeConnection());
-        MenuItem propertyItem = new MenuItem("连接属性");
-        propertyItem.setOnAction(event -> this.connectionProperty());
-        MenuItem deleteItem = new MenuItem("删除连接");
-        deleteItem.setOnAction(t -> this.deleteConnection());
+    private final MenuItem openItem;
+    private final MenuItem closeItem;
+    private final MenuItem propertyItem;
+    private final MenuItem deleteItem;
+
+    public RedisServerItem(RedisServerProperty serverProperty,
+                           RedisServerItemMenuActionHandler openConnectionActionEventHandler,
+                           RedisServerItemMenuActionHandler closeConnectionActionEventHandler,
+                           RedisServerItemMenuActionHandler deleteConnectionActionEventHandler,
+                           RedisServerItemMenuActionHandler connectionPropertyActionEventHandler) {
+        super(serverProperty.toString());
+        openItem = new MenuItem("打开连接");
+        openItem.disableProperty().bind(isOpen);
+        openItem.setOnAction(event -> openConnectionActionEventHandler.handler(RedisServerItem.this, serverProperty));
+
+        closeItem = new MenuItem("关闭连接");
+        closeItem.disableProperty().bind(isOpen.not());
+        closeItem.setOnAction(event -> closeConnectionActionEventHandler.handler(RedisServerItem.this, serverProperty));
+
+        propertyItem = new MenuItem("连接属性");
+        propertyItem.disableProperty().bind(isOpen.not());
+        propertyItem.setOnAction(event -> connectionPropertyActionEventHandler.handler(RedisServerItem.this, serverProperty));
+
+        deleteItem = new MenuItem("删除连接");
+        deleteItem.setOnAction(event -> deleteConnectionActionEventHandler.handler(RedisServerItem.this, serverProperty));
         contextMenu = new ContextMenu();
         contextMenu.getItems().addAll(openItem, closeItem, propertyItem, deleteItem);
-    }
-
-    private void openConnection() {
-        ObservableList children = getChildren();
-        if (children.isEmpty()) {
-            for (int i = 0; i < 16; i++) {
-                children.add(new RedisDatabaseItem(new RedisDatabaseProperty(i)));
-            }
-            setExpanded(true);
-        } else {
-            setExpanded(true);
-        }
-    }
-
-    private void closeConnection() {
-        ObservableList children = getChildren();
-        children.clear();
-        setExpanded(false);
-    }
-
-    private void connectionProperty() {
-        //TODO
-
-    }
-
-    private void deleteConnection() {
-        TreeItem parent = getParent();
-        parent.getChildren().remove(this);
     }
 
     @Override
     public ContextMenu getContextMenu() {
         return this.contextMenu;
+    }
+
+    public void setIsOpen(boolean isOpen) {
+        this.isOpen.set(isOpen);
+    }
+
+    public boolean isIsOpen() {
+        return isOpen.get();
+    }
+
+    public BooleanProperty isOpenProperty() {
+        return isOpen;
     }
 }

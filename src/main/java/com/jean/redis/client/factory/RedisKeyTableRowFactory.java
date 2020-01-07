@@ -1,10 +1,7 @@
 package com.jean.redis.client.factory;
 
 import com.jean.redis.client.model.RedisKey;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.DataFormat;
 import javafx.util.Callback;
@@ -52,7 +49,18 @@ public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, Ta
 
             MenuItem setTtl = new MenuItem("设置超时时间");
             setTtl.setOnAction(event -> {
-
+                RedisKey redisKey = getItem();
+                long ttl = redisKey.getTtl();
+                TextInputDialog dialog = new TextInputDialog(String.valueOf(ttl));
+                dialog.setTitle("设置超时时间");
+                dialog.setHeaderText("key：" + new String(redisKey.getKey()));
+                dialog.setContentText("超时时间（s）：");
+                dialog.showAndWait().ifPresent((value) -> {
+                    if (!value.isEmpty()) {
+                        long ttlValue = Long.valueOf(value);
+                        logger.debug("ttlValue {}", ttlValue);
+                    }
+                });
             });
 
             contextMenu.getItems().addAll(copy, del, setTtl);

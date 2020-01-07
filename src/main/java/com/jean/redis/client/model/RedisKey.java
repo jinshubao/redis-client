@@ -4,26 +4,40 @@ import javafx.beans.property.*;
 
 public class RedisKey {
 
-    protected ObjectProperty<ConfigProperty> config = new SimpleObjectProperty<>();
+    private ObjectProperty<RedisServerProperty> server = new SimpleObjectProperty<>(this, "server");
 
-    protected ObjectProperty<byte[]> key = new SimpleObjectProperty<>();
+    private IntegerProperty database = new SimpleIntegerProperty(this, "database");
 
-    protected StringProperty type = new SimpleStringProperty();
+    private ObjectProperty<byte[]> key = new SimpleObjectProperty<>(this, "key");
 
-    protected LongProperty ttl = new SimpleLongProperty();
+    private StringProperty type = new SimpleStringProperty(this, "type");
 
-    protected LongProperty size = new SimpleLongProperty();
+    private LongProperty ttl = new SimpleLongProperty(this, "ttl");
 
-    public ConfigProperty getConfig() {
-        return config.get();
+    private LongProperty size = new SimpleLongProperty(this, "size");
+
+    public RedisServerProperty getServer() {
+        return server.get();
     }
 
-    public ObjectProperty<ConfigProperty> configProperty() {
-        return config;
+    public ObjectProperty<RedisServerProperty> serverProperty() {
+        return server;
     }
 
-    public void setConfig(ConfigProperty config) {
-        this.config.set(config);
+    public void setServer(RedisServerProperty server) {
+        this.server.set(server);
+    }
+
+    public int getDatabase() {
+        return database.get();
+    }
+
+    public IntegerProperty databaseProperty() {
+        return database;
+    }
+
+    public void setDatabase(int database) {
+        this.database.set(database);
     }
 
     public byte[] getKey() {
