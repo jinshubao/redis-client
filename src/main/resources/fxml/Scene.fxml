@@ -47,6 +47,8 @@
             <SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
                 <TableView fx:id="keyTableView">
                     <columns>
+                        <TableColumn fx:id="keyNoColumn" maxWidth="100.0" minWidth="100.0" prefWidth="100.0"
+                                     resizable="false" text="No."/>
                         <TableColumn fx:id="keyColumn" maxWidth="1.7976931348623157E308" minWidth="-1.0"
                                      prefWidth="500.0" text="KEY"/>
                         <TableColumn fx:id="typeColumn" maxWidth="100.0" minWidth="100.0" prefWidth="100.0"

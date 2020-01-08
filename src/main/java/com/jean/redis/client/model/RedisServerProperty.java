@@ -5,12 +5,19 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+import java.util.UUID;
+
 public class RedisServerProperty {
+
 
     private StringProperty host = new SimpleStringProperty(this, "host");
     private IntegerProperty port = new SimpleIntegerProperty(this, "port");
     private StringProperty password = new SimpleStringProperty(this, "password");
+    private StringProperty uuid = new SimpleStringProperty(this, "uuid");
 
+    public RedisServerProperty() {
+        this.uuid.set(UUID.randomUUID().toString());
+    }
 
     public String getHost() {
         return host.get();
@@ -48,6 +55,13 @@ public class RedisServerProperty {
         this.password.set(password);
     }
 
+    public String getUuid() {
+        return uuid.get();
+    }
+
+    public StringProperty uuidProperty() {
+        return uuid;
+    }
 
     @Override
     public String toString() {

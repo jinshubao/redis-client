@@ -1,13 +1,10 @@
 package com.jean.redis.client.constant;
 
-import com.jean.redis.client.model.RedisDatabaseProperty;
-import com.jean.redis.client.model.RedisKey;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
 import org.apache.commons.pool2.ObjectPool;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,15 +14,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CommonConstant {
 
-    public static Map<RedisDatabaseProperty, List<RedisKey>> GLOBAL_CACHE = new HashMap<>();
-
     public static final Map<String, RedisClient> GLOBAL_REDIS_CLIENT_CACHE = new ConcurrentHashMap<>();
 
     public static final Map<String, ObjectPool<StatefulRedisConnection<byte[], byte[]>>> GLOBAL_REDIS_CONNECTION_POOL_CACHE = new HashMap<>();
 
+    public static void putConnectionPool(String uuid, ObjectPool<StatefulRedisConnection<byte[], byte[]>> value) {
+        GLOBAL_REDIS_CONNECTION_POOL_CACHE.put(uuid, value);
+    }
 
-    public static ObjectPool<StatefulRedisConnection<byte[], byte[]>> getConnectionPool(String server) {
-        return GLOBAL_REDIS_CONNECTION_POOL_CACHE.get(server);
+    public static ObjectPool<StatefulRedisConnection<byte[], byte[]>> removeConnectionPool(String uuid) {
+        return GLOBAL_REDIS_CONNECTION_POOL_CACHE.remove(uuid);
+    }
+
+    public static ObjectPool<StatefulRedisConnection<byte[], byte[]>> getConnectionPool(String uuid) {
+        return GLOBAL_REDIS_CONNECTION_POOL_CACHE.get(uuid);
     }
 
 

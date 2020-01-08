@@ -46,7 +46,7 @@ public abstract class BaseTask<V> extends Task<V> {
     }
 
     protected ObjectPool<StatefulRedisConnection<byte[], byte[]>> getConnectionObjectPool() {
-        return CommonConstant.getConnectionPool(serverProperty.toString());
+        return CommonConstant.getConnectionPool(serverProperty.getUuid());
     }
 
     protected StatefulRedisConnection<byte[], byte[]> getConnection() throws Exception {

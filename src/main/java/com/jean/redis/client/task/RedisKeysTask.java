@@ -38,14 +38,14 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
                 scanCursor.setFinished(cursor.isFinished());
                 List<byte[]> keys = cursor.getKeys();
                 List<RedisKey> collect = keys.stream().map(key -> {
-                    Long ttl = commands.ttl(key);
-                    String type = commands.type(key);
                     RedisKey redisKey = new RedisKey();
                     redisKey.setServer(serverProperty);
                     redisKey.setDatabase(database);
                     redisKey.setKey(key);
-                    redisKey.setTtl(ttl);
-                    redisKey.setType(type);
+//                    Long ttl = commands.ttl(key);
+//                    redisKey.setTtl(ttl);
+//                    String type = commands.type(key);
+//                    redisKey.setType(type);
                     return redisKey;
                 }).collect(Collectors.toList());
                 value.addAll(collect);
