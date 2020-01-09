@@ -339,9 +339,6 @@ public class MainController implements Initializable, AutoCloseable {
 
     private CreateRedisServerDialog connectionDialog() {
         RedisServerProperty property = new RedisServerProperty();
-        property.setHost("101.132.156.127");
-        property.setPort(6379);
-        property.setPassword("123!=-09][po");
         return CreateRedisServerDialog.newInstance(property);
     }
 
