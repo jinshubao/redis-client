@@ -6,13 +6,13 @@ import java.util.List;
 
 public class RedisStringValue extends RedisValue<byte[]> {
 
-    public RedisStringValue(byte[] key, byte[] value, long ttl) {
-        super(key, value, ttl);
+    public RedisStringValue(byte[] key, String type, Long ttl, Long size, byte[] value) {
+        super(key, type, ttl, size, value);
     }
 
     public Collection<byte[]> toList() {
         List<byte[]> list = new ArrayList<>(1);
-        list.add(value.get());
+        list.add(getValue());
         return list;
     }
 }

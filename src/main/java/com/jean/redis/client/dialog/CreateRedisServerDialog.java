@@ -60,7 +60,7 @@ public class CreateRedisServerDialog extends Dialog<RedisServerProperty> {
         this.setTitle("添加服务器");
         this.initModality(Modality.APPLICATION_MODAL);
         Stage stage = (Stage) dialogPane.getScene().getWindow();
-        stage.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_24px.png")));
+        stage.getIcons().add(new Image(ResourceLoader.Image.redis_logo_24));
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         //设置默认值

@@ -6,13 +6,11 @@ import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
  * @author jinshubao
  * @date 2016/11/25
  */
-@Component
 public class RedisKeyTableKeyColumnCellFactory<S> implements Callback<TableColumn<S, byte[]>, TableCell<S, byte[]>> {
 
     private static Logger logger = LoggerFactory.getLogger(RedisKeyTableKeyColumnCellFactory.class);

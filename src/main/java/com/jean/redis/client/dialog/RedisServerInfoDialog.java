@@ -25,7 +25,7 @@ public class RedisServerInfoDialog extends Dialog<Void> {
         this.setHeaderText("服务器信息");
         this.initModality(Modality.APPLICATION_MODAL);
         Stage stage = (Stage) dialogPane.getScene().getWindow();
-        stage.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_24px.png")));
+        stage.getIcons().add(new Image(ResourceLoader.Image.redis_logo_24));
         getDialogPane().setContent(textArea);
         dialogPane.getButtonTypes().addAll(ButtonType.CLOSE);
     }

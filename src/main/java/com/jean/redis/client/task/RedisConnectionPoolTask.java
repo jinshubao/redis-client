@@ -1,5 +1,6 @@
 package com.jean.redis.client.task;
 
+import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.model.RedisServerProperty;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -25,6 +26,7 @@ public class RedisConnectionPoolTask extends BaseTask<ObjectPool<StatefulRedisCo
         }
         RedisURI redisURI = builder.build();
         RedisClient client = RedisClient.create(redisURI);
+        CommonConstant.GLOBAL_REDIS_CLIENT_CACHE.put(serverProperty.getUuid(), client);
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
         return ConnectionPoolSupport.createGenericObjectPool(() -> client.connect(ByteArrayCodec.INSTANCE), poolConfig, true);
     }

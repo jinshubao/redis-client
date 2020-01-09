@@ -9,12 +9,10 @@ import javafx.scene.control.TreeView;
 import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
  * Created by jinshubao on 2016/11/25.
  */
-@Component
 public class RedisTreeCellFactory implements Callback<TreeView<Object>, TreeCell<Object>> {
 
     private static Logger logger = LoggerFactory.getLogger(RedisTreeCellFactory.class);

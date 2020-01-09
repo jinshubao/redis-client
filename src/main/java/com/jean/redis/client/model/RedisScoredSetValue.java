@@ -5,11 +5,11 @@ import java.util.List;
 
 public class RedisScoredSetValue extends RedisValue<List<byte[]>> {
 
-    public RedisScoredSetValue(byte[] key, List<byte[]> value, long ttl) {
-        super(key, value, ttl);
+    public RedisScoredSetValue(byte[] key, String type, Long ttl, Long size, List<byte[]> value) {
+        super(key, type, ttl, size, value);
     }
 
     public Collection<byte[]> toList() {
-        return this.value.get();
+        return getValue();
     }
 }

@@ -8,7 +8,7 @@ import io.lettuce.core.api.sync.RedisCommands;
 
 import java.util.*;
 
-public class RedisValueTask extends BaseTask<RedisValue> {
+public class RedisValueTask extends BaseTask<RedisValue<?>> {
 
     private static final long VALUE_SCAN_SIZE = 100;
 
@@ -56,7 +56,7 @@ public class RedisValueTask extends BaseTask<RedisValue> {
         byte[] value = commands.get(key);
         Long ttl = commands.ttl(key);
         updateProgress(1L, 1L);
-        return new RedisStringValue(key, value, ttl);
+        return new RedisStringValue(key, CommonConstant.KeyType.STRING, ttl, 1L, value);
     }
 
     private RedisValue<Map<byte[], byte[]>> getHashValue(RedisCommands<byte[], byte[]> commands) {
@@ -77,7 +77,7 @@ public class RedisValueTask extends BaseTask<RedisValue> {
                 }
             } while (!scanCursor.isFinished());
         }
-        return new RedisHashValue(key, value, ttl);
+        return new RedisHashValue(key, CommonConstant.KeyType.HASH, ttl, size, value);
     }
 
 
@@ -87,7 +87,7 @@ public class RedisValueTask extends BaseTask<RedisValue> {
         long scanSize = VALUE_SCAN_SIZE;
         if (size <= scanSize) {
             List<byte[]> value = commands.lrange(key, 0, -1);
-            return new RedisListValue(key, value, ttl);
+            return new RedisListValue(key, CommonConstant.KeyType.LIST, ttl, size, value);
         }
         List<byte[]> value = new ArrayList<>();
         long start = 0;
@@ -100,7 +100,7 @@ public class RedisValueTask extends BaseTask<RedisValue> {
                 break;
             }
         }
-        return new RedisListValue(key, value, ttl);
+        return new RedisListValue(key, CommonConstant.KeyType.LIST, ttl, size, value);
     }
 
 
@@ -122,7 +122,7 @@ public class RedisValueTask extends BaseTask<RedisValue> {
                 }
             } while (!scanCursor.isFinished());
         }
-        return new RedisScoredSetValue(key, value, ttl);
+        return new RedisScoredSetValue(key, CommonConstant.KeyType.ZSET, ttl, size, value);
     }
 
 
@@ -144,7 +144,7 @@ public class RedisValueTask extends BaseTask<RedisValue> {
                 }
             } while (!scanCursor.isFinished());
         }
-        return new RedisSetValue(key, value, ttl);
+        return new RedisSetValue(key, CommonConstant.KeyType.SET, ttl, size, value);
     }
 
 }

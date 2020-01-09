@@ -8,7 +8,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.DataFormat;
 import javafx.util.Callback;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +16,6 @@ import java.util.Map;
  * @author jinshubao
  * @date 2016/11/25
  */
-@Component
 public class RedisValueListCellFactory implements Callback<ListView<byte[]>, ListCell<byte[]>> {
 
     @Override

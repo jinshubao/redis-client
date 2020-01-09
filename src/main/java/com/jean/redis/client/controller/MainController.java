@@ -1,6 +1,7 @@
 package com.jean.redis.client.controller;
 
 import com.jean.redis.client.constant.CommonConstant;
+import com.jean.redis.client.ctrl.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
 import com.jean.redis.client.dialog.RedisServerInfoDialog;
 import com.jean.redis.client.factory.*;
@@ -30,13 +31,9 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.util.Callback;
 import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.stereotype.Controller;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -47,9 +44,8 @@ import java.util.concurrent.ExecutorService;
 /**
  * @author jinshubao
  */
-@Controller
 @SuppressWarnings("unchecked")
-public class MainController implements Initializable, InitializingBean, DisposableBean {
+public class MainController implements Initializable, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
@@ -62,7 +58,7 @@ public class MainController implements Initializable, InitializingBean, Disposab
     @FXML
     public TableView<RedisKey> keyTableView;
     @FXML
-    public TableColumn<RedisKey, Long> keyNoColumn;
+    public TableColumn keyNoColumn;
     @FXML
     public TableColumn<RedisKey, byte[]> keyColumn;
     @FXML
@@ -71,6 +67,8 @@ public class MainController implements Initializable, InitializingBean, Disposab
     public TableColumn<RedisKey, Number> sizeColumn;
     @FXML
     public TableColumn<RedisKey, Number> ttlColumn;
+    @FXML
+    public TreeTableView treeTableView;
     @FXML
     public ListView<byte[]> valueListView;
     @FXML
@@ -84,21 +82,18 @@ public class MainController implements Initializable, InitializingBean, Disposab
     @FXML
     public MenuItem aboutMenuItem;
 
-    private RedisRootItem redisRootItem;
-
-    private ProgressIndicator keyProgressIndicator;
-
-    private ProgressIndicator valueProgressIndicator;
-
     private final ExecutorService executorService;
 
-    private final RedisTreeCellFactory redisTreeCellFactory;
+    private RedisTreeCellFactory redisTreeCellFactory;
+    private RedisKeyTableRowFactory redisKeyTableRowFactory;
+    private RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory;
+    private RedisValueListCellFactory redisValueListCellFactory;
+    private TableIndexColumnCellFactory tableIndexColumnCellFactory;
 
-    private final RedisKeyTableRowFactory redisKeyTableRowFactory;
+    private RedisRootItem serverTreeViewRootItem;
 
-    private final RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory;
-
-    private final RedisValueListCellFactory redisValueListCellFactory;
+    private ProgressIndicatorPlaceholder keyProgressIndicator;
+    private ProgressIndicatorPlaceholder valueProgressIndicator;
 
     private RedisServerItemMenuActionHandler openConnectionActionEventHandler;
     private RedisServerItemMenuActionHandler closeConnectionActionEventHandler;
@@ -122,36 +117,41 @@ public class MainController implements Initializable, InitializingBean, Disposab
     private ObjectProperty<Integer> database = new SimpleObjectProperty<>(this, "database");
 
 
-    public MainController(ExecutorService executorService,
-                          RedisTreeCellFactory redisTreeCellFactory,
-                          RedisKeyTableRowFactory redisKeyTableRowFactory,
-                          RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory,
-                          RedisValueListCellFactory redisValueListCellFactory) {
+    public MainController(ExecutorService executorService) {
         this.executorService = executorService;
-        this.redisTreeCellFactory = redisTreeCellFactory;
-        this.redisKeyTableRowFactory = redisKeyTableRowFactory;
-        this.redisKeyTableKeyColumnCellFactory = redisKeyTableKeyColumnCellFactory;
-        this.redisValueListCellFactory = redisValueListCellFactory;
         logger.debug("main controller constructed...");
     }
 
     /**
-     * @param url            url
-     * @param resourceBundle bundle
+     * @param url    url
+     * @param bundle bundle
      */
     @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
+    public void initialize(URL url, ResourceBundle bundle) {
+        this.initializeFactory();
         this.initializeActionEventHandler();
         this.initializeWorkerStateEventHandler();
         this.initializeProgressIndicator();
         this.initializeMenuBar();
         this.initializeSearch();
         this.initializeTreeView();
+        this.initializeTreeTableView();
         this.initializeKeyTableView();
         this.initializeValueListView();
         this.initializeTaskBar();
     }
 
+    private void initializeFactory() {
+        this.redisTreeCellFactory = new RedisTreeCellFactory();
+        this.redisKeyTableRowFactory = new RedisKeyTableRowFactory();
+        this.redisKeyTableKeyColumnCellFactory = new RedisKeyTableKeyColumnCellFactory();
+        this.redisValueListCellFactory = new RedisValueListCellFactory();
+        tableIndexColumnCellFactory = new TableIndexColumnCellFactory();
+    }
+
+    /**
+     * 初始化事件处理器
+     */
     private void initializeActionEventHandler() {
         //新建连接
         //noinspection CodeBlock2Expr
@@ -161,7 +161,7 @@ public class MainController implements Initializable, InitializingBean, Disposab
                         openConnectionActionEventHandler, closeConnectionActionEventHandler,
                         deleteConnectionActionEventHandler, connectionPropertyActionEventHandler);
                 serverItem.setExpanded(false);
-                redisRootItem.getChildren().add(serverItem);
+                serverTreeViewRootItem.getChildren().add(serverItem);
             });
         });
         openConnectionActionEventHandler = (treeItem, menuItem, serverProperty) -> this.openConnection(treeItem, serverProperty);
@@ -190,14 +190,17 @@ public class MainController implements Initializable, InitializingBean, Disposab
         };
     }
 
+    /**
+     * 初始化异步任务事件处理器
+     */
     private void initializeWorkerStateEventHandler() {
         //redis key task scheduled event handler
         keyTaskScheduledEventHandler = (event -> {
             keyTableView.getItems().clear();
-            keyProgressIndicator.progressProperty().unbind();
-            keyProgressIndicator.progressProperty().bind(event.getSource().progressProperty());
-            keyProgressIndicator.visibleProperty().unbind();
-            keyProgressIndicator.visibleProperty().bind(event.getSource().runningProperty());
+            keyProgressIndicator.indicatorProgressProperty().unbind();
+            keyProgressIndicator.indicatorProgressProperty().bind(event.getSource().progressProperty());
+            keyProgressIndicator.indicatorVisibleProperty().unbind();
+            keyProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
         });
         //redis key task scheduled event handler
         keyTaskSuccessEventHandler = (event -> {
@@ -209,10 +212,10 @@ public class MainController implements Initializable, InitializingBean, Disposab
         //redis value task success event handler
         valueTaskScheduledEventHandler = (event -> {
             valueListView.getItems().clear();
-            valueProgressIndicator.progressProperty().unbind();
-            valueProgressIndicator.progressProperty().bind(event.getSource().progressProperty());
-            valueProgressIndicator.visibleProperty().unbind();
-            valueProgressIndicator.visibleProperty().bind(event.getSource().runningProperty());
+            valueProgressIndicator.indicatorProgressProperty().unbind();
+            valueProgressIndicator.indicatorProgressProperty().bind(event.getSource().progressProperty());
+            valueProgressIndicator.indicatorVisibleProperty().unbind();
+            valueProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
         });
         //redis value task success event handler
         valueTaskSuccessEventHandler = (event -> {
@@ -243,26 +246,19 @@ public class MainController implements Initializable, InitializingBean, Disposab
      * 初始化进度条
      */
     private void initializeProgressIndicator() {
-        keyProgressIndicator = new ProgressIndicator(-1D);
-        keyProgressIndicator.setMaxHeight(50D);
-        keyProgressIndicator.setMaxWidth(50D);
-        keyProgressIndicator.setVisible(false);
-
-        valueProgressIndicator = new ProgressIndicator(-1D);
-        valueProgressIndicator.setMaxHeight(50D);
-        valueProgressIndicator.setMaxWidth(50D);
-        valueProgressIndicator.setVisible(false);
+        keyProgressIndicator = new ProgressIndicatorPlaceholder();
+        valueProgressIndicator = new ProgressIndicatorPlaceholder();
     }
 
     /**
      * 初始化左侧树形结构
      */
     private void initializeTreeView() {
-        redisRootItem = new RedisRootItem("服务器列表", newConnectionActionEventHandler);
-        redisRootItem.setExpanded(true);
+        serverTreeViewRootItem = new RedisRootItem("服务器列表", newConnectionActionEventHandler);
+        serverTreeViewRootItem.setExpanded(true);
 
         serverTreeView.setCellFactory(redisTreeCellFactory);
-        serverTreeView.setRoot(redisRootItem);
+        serverTreeView.setRoot(serverTreeViewRootItem);
 
         //切换数据库
         serverTreeView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -288,27 +284,15 @@ public class MainController implements Initializable, InitializingBean, Disposab
         });
     }
 
+    private void initializeTreeTableView() {
+    }
+
 
     /**
      * 初始化 redis key 表格
      */
     private void initializeKeyTableView() {
-        keyNoColumn.setCellFactory(new Callback<TableColumn<RedisKey, Long>, TableCell<RedisKey, Long>>() {
-            @Override
-            public TableCell<RedisKey, Long> call(TableColumn<RedisKey, Long> param) {
-                return new TableCell<RedisKey, Long>() {
-                    @Override
-                    protected void updateItem(Long item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (!isEmpty()) {
-                            setText(String.valueOf(getTableRow().getIndex()));
-                        } else {
-                            setText(null);
-                        }
-                    }
-                };
-            }
-        });
+        keyNoColumn.setCellFactory(tableIndexColumnCellFactory);
         keyColumn.setCellFactory(redisKeyTableKeyColumnCellFactory);
         keyColumn.setCellValueFactory(param -> param.getValue().keyProperty());
         typeColumn.setCellValueFactory(param -> param.getValue().typeProperty());
@@ -447,19 +431,12 @@ public class MainController implements Initializable, InitializingBean, Disposab
         dialog.show();
     }
 
-    /**
-     * 初始化
-     */
-    @Override
-    public void afterPropertiesSet() {
-        logger.debug("main controller afterPropertiesSet...");
-    }
 
     /**
      * 主程序退出回调
      */
     @Override
-    public void destroy() {
+    public void close() {
         logger.debug("main controller destroy...");
         CommonConstant.GLOBAL_REDIS_CONNECTION_POOL_CACHE.values().forEach(ObjectPool::close);
         CommonConstant.GLOBAL_REDIS_CLIENT_CACHE.values().forEach(AbstractRedisClient::shutdownAsync);

@@ -7,13 +7,11 @@ import javafx.scene.input.DataFormat;
 import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
 
-@Component
 public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, TableRow<RedisKey>> {
 
     private static Logger logger = LoggerFactory.getLogger(RedisKeyTableRowFactory.class);
@@ -25,7 +23,7 @@ public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, Ta
 
     private static class RedisKeyTableRow extends TableRow<RedisKey> {
 
-        public RedisKeyTableRow() {
+        private RedisKeyTableRow() {
             setContextMenu(createTableRowContextMenu());
         }
 

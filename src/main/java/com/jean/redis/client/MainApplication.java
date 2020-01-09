@@ -1,5 +1,7 @@
 package com.jean.redis.client;
 
+import com.jean.redis.client.constant.CommonConstant;
+import com.jean.redis.client.factory.RedisThreadFactory;
 import com.jean.redis.client.util.ResourceLoader;
 import javafx.application.Application;
 import javafx.application.Preloader;
@@ -10,53 +12,70 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import javafx.util.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-@Configuration
-@ComponentScan
 public class MainApplication extends Application {
 
-    @Value("${spring.application.name}")
-    private String applicationName;
+    private static final Logger logger = LoggerFactory.getLogger(MainApplication.class);
 
-    @Value("${spring.application.version}")
-    private String applicationVersion;
+    private Map<Class<?>, Object> controllers = new HashMap<>();
 
-    private ConfigurableApplicationContext applicationContext;
+    private ExecutorService executorService;
 
+    private ResourceBundle bundle;
+
+    private Callback<Class<?>, Object> controllerFactory;
+
+    private URL mainUI;
 
     @Override
     public void init() throws Exception {
+        //启动参数
         List<String> params = getParameters().getRaw();
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
-        applicationContext = SpringApplication.run(MainApplication.class, params.toArray(new String[0]));
-        applicationContext.getAutowireCapableBeanFactory().autowireBean(this);
+        executorService = Executors.newFixedThreadPool(CommonConstant.THREAD_POOL_SIZE, new RedisThreadFactory());
+        bundle = ResourceBundle.getBundle("local", Locale.SIMPLIFIED_CHINESE, new EncodingResourceBundleControl("UTF-8"));
+        mainUI = ResourceLoader.load("/fxml/Scene.fxml");
+        controllerFactory = param -> {
+            try {
+                //控制器注入线程池
+                Constructor<?> constructor = param.getDeclaredConstructor(ExecutorService.class);
+                Object instance = constructor.newInstance(executorService);
+                controllers.put(param, instance);
+                return instance;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Override
     public void start(Stage stage) throws Exception {
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_START, this));
-        FXMLLoader loader = new FXMLLoader();
-        loader.setControllerFactory(param -> applicationContext.getBean(param));
-        Parent root = loader.load(ResourceLoader.loadAsStream("/fxml/Scene.fxml"));
+        FXMLLoader loader = new FXMLLoader(mainUI, bundle, null, controllerFactory);
+        Parent root = loader.load();
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
-        stage.setTitle(applicationName + " - " + applicationVersion);
-        stage.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_32px.png")));
+        stage.setTitle("redis client" + " - " + "1.0.0");
+        stage.getIcons().add(new Image(ResourceLoader.Image.redis_logo_32));
         stage.setScene(scene);
         stage.show();
         stage.setOnCloseRequest(event -> {
-            Alert dialog = new Alert(Alert.AlertType.CONFIRMATION, "确认退出？", ButtonType.CANCEL, ButtonType.OK);
+            Alert dialog = new Alert(Alert.AlertType.CONFIRMATION, bundle.getString("application.dialog.exit.confirm"), ButtonType.CANCEL, ButtonType.OK);
             dialog.setHeaderText(null);
-            dialog.setTitle("退出提示");
-            Stage sta = (Stage) dialog.getDialogPane().getScene().getWindow();
-            sta.getIcons().add(new Image(ResourceLoader.loadAsStream("/image/dbs_redis_24px.png")));
+            dialog.setTitle(bundle.getString("application.dialog.exit.title"));
+            Stage window = (Stage) dialog.getDialogPane().getScene().getWindow();
+            window.getIcons().add(new Image(ResourceLoader.Image.redis_logo_24));
             dialog.showAndWait().ifPresent(buttonType -> {
                 if (buttonType != ButtonType.OK) {
                     event.consume();
@@ -67,7 +86,15 @@ public class MainApplication extends Application {
 
     @Override
     public void stop() throws Exception {
-        applicationContext.close();
+        controllers.values().forEach(value -> {
+            if (value instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable) value).close();
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            }
+        });
     }
 
     /**
@@ -80,5 +107,29 @@ public class MainApplication extends Application {
      */
     public static void main(String[] args) {
         launch(args);
+    }
+
+    /**
+     * ResourceBundle 编码
+     */
+    private static final class EncodingResourceBundleControl extends ResourceBundle.Control {
+
+        private final String encoding;
+
+        private EncodingResourceBundleControl(String encoding) {
+            this.encoding = encoding;
+        }
+
+        @Override
+        public ResourceBundle newBundle(String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
+                throws IllegalAccessException, InstantiationException, IOException {
+            String bundleName = toBundleName(baseName, locale);
+            String resourceName = toResourceName(bundleName, "properties");
+            URL resourceURL = loader.getResource(resourceName);
+            if (resourceURL != null) {
+                return new PropertyResourceBundle(new InputStreamReader(resourceURL.openStream(), encoding));
+            }
+            return super.newBundle(baseName, locale, format, loader, reload);
+        }
     }
 }

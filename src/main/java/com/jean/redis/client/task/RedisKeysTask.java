@@ -9,6 +9,7 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,7 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
                     break;
                 }
             } while (!scanCursor.isFinished());
+            value.sort(Comparator.comparing(o -> new String(o.getKey())));
             return value;
         }
     }

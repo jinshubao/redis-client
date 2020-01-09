@@ -12,12 +12,12 @@ public class RedisHashValue extends RedisValue<Map<byte[], byte[]>> {
 
     private static final byte[] HASH_SP_BYTES = HASH_SP.getBytes();
 
-    public RedisHashValue(byte[] key, Map<byte[], byte[]> value, long ttl) {
-        super(key, value, ttl);
+    public RedisHashValue(byte[] key, String type, Long ttl, Long size, Map<byte[], byte[]> value) {
+        super(key, type, ttl, size, value);
     }
 
     public Collection<byte[]> toList() {
-        Map<byte[], byte[]> hash = value.get();
+        Map<byte[], byte[]> hash = getValue();
         List<byte[]> list = new ArrayList<>(hash.size());
         hash.forEach((key, value) -> {
             ByteBuffer buffer = ByteBuffer.allocate(key.length + value.length + HASH_SP_BYTES.length);
