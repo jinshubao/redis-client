@@ -19,6 +19,7 @@ import com.jean.redis.client.task.RedisServerInfoTask;
 import com.jean.redis.client.task.RedisValueTask;
 import io.lettuce.core.AbstractRedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
+import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -71,6 +72,8 @@ public class MainController implements Initializable, AutoCloseable {
     public TreeTableView treeTableView;
     @FXML
     public ListView<byte[]> valueListView;
+    @FXML
+    private TextArea valueTextArea;
     @FXML
     public Label messageLabel;
     @FXML
@@ -314,29 +317,31 @@ public class MainController implements Initializable, AutoCloseable {
         valueListView.setCellFactory(redisValueListCellFactory);
         valueListView.setPlaceholder(valueProgressIndicator);
         valueListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        valueTextArea.setWrapText(true);
+        valueTextArea.setEditable(false);
+
+        StringBinding stringBinding = Bindings.createStringBinding(() -> {
+            byte[] item = valueListView.getSelectionModel().getSelectedItem();
+            return item == null ? null : new String(item, CommonConstant.CHARSET_UTF8);
+        }, valueListView.getSelectionModel().selectedItemProperty());
+        valueTextArea.textProperty().bind(stringBinding);
     }
 
     private void initializeTaskBar() {
-        serverInfoLabel.textProperty().bind(new StringBinding() {
-            {
-                super.bind(server, database);
-            }
-
-            @Override
-            protected String computeValue() {
-                if (server.get() != null && database.get() != null) {
-                    return server.get() + ":" + database.get();
+        StringBinding stringBinding = Bindings.createStringBinding(() -> {
+            if (server.get() != null && database.get() != null) {
+                return server.get() + ":" + database.get();
+            } else {
+                if (server.get() != null) {
+                    return server.get();
+                } else if (database.get() != null) {
+                    return database.get().toString();
                 } else {
-                    if (server.get() != null) {
-                        return server.get();
-                    } else if (database.get() != null) {
-                        return database.get().toString();
-                    } else {
-                        return null;
-                    }
+                    return null;
                 }
             }
-        });
+        }, server, database);
+        serverInfoLabel.textProperty().bind(stringBinding);
     }
 
     private CreateRedisServerDialog connectionDialog() {

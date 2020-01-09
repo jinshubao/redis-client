@@ -1,6 +1,7 @@
 package com.jean.redis.client.factory;
 
 
+import com.jean.redis.client.constant.CommonConstant;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -36,7 +37,7 @@ public class RedisValueListCellFactory implements Callback<ListView<byte[]>, Lis
             if (empty || item == null) {
                 setText(null);
             } else {
-                setText(new String(item));
+                setText(new String(item, CommonConstant.CHARSET_UTF8));
             }
         }
 
@@ -45,7 +46,7 @@ public class RedisValueListCellFactory implements Callback<ListView<byte[]>, Lis
             MenuItem copy = new MenuItem("复制");
             copy.setOnAction(event -> {
                 Map<DataFormat, Object> content = new HashMap<>();
-                content.put(DataFormat.PLAIN_TEXT, new String(getItem()));
+                content.put(DataFormat.PLAIN_TEXT, new String(getItem(), CommonConstant.CHARSET_UTF8));
                 Clipboard.getSystemClipboard().setContent(content);
             });
             contextMenu.getItems().add(copy);

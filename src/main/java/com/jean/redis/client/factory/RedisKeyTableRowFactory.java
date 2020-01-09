@@ -1,5 +1,6 @@
 package com.jean.redis.client.factory;
 
+import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.model.RedisKey;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
@@ -37,7 +38,7 @@ public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, Ta
             MenuItem copy = new MenuItem("复制");
             copy.setOnAction(event -> {
                 Map<DataFormat, Object> content = new HashMap<>();
-                content.put(DataFormat.PLAIN_TEXT, new String(getItem().getKey()));
+                content.put(DataFormat.PLAIN_TEXT, new String(getItem().getKey(), CommonConstant.CHARSET_UTF8));
                 Clipboard.getSystemClipboard().setContent(content);
             });
             MenuItem del = new MenuItem("删除");
@@ -51,7 +52,7 @@ public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, Ta
                 long ttl = redisKey.getTtl();
                 TextInputDialog dialog = new TextInputDialog(String.valueOf(ttl));
                 dialog.setTitle("设置超时时间");
-                dialog.setHeaderText("key：" + new String(redisKey.getKey()));
+                dialog.setHeaderText("key：" + new String(redisKey.getKey(), CommonConstant.CHARSET_UTF8));
                 dialog.setContentText("超时时间（s）：");
                 dialog.showAndWait().ifPresent((value) -> {
                     if (!value.isEmpty()) {

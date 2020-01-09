@@ -3,6 +3,7 @@ package com.jean.redis.client;
 import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.factory.RedisThreadFactory;
 import com.jean.redis.client.util.ResourceLoader;
+import com.jean.redis.client.util.StringUtils;
 import javafx.application.Application;
 import javafx.application.Preloader;
 import javafx.fxml.FXMLLoader;
@@ -28,6 +29,8 @@ public class MainApplication extends Application {
 
     private static final Logger logger = LoggerFactory.getLogger(MainApplication.class);
 
+    private List<String> params;
+
     private Map<Class<?>, Object> controllers = new HashMap<>();
 
     private ExecutorService executorService;
@@ -41,7 +44,7 @@ public class MainApplication extends Application {
     @Override
     public void init() throws Exception {
         //启动参数
-        List<String> params = getParameters().getRaw();
+        params = getParameters().getRaw();
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
         executorService = Executors.newFixedThreadPool(CommonConstant.THREAD_POOL_SIZE, new RedisThreadFactory());
         bundle = ResourceBundle.getBundle("local", Locale.SIMPLIFIED_CHINESE, new EncodingResourceBundleControl("UTF-8"));
@@ -66,7 +69,7 @@ public class MainApplication extends Application {
         Parent root = loader.load();
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
-        stage.setTitle("redis client" + " - " + "1.0.0");
+        stage.setTitle(StringUtils.join(params, " "));
         stage.getIcons().add(new Image(ResourceLoader.Image.redis_logo_32));
         stage.setScene(scene);
         stage.show();

@@ -1,6 +1,7 @@
 package com.jean.redis.client.factory;
 
 
+import com.jean.redis.client.constant.CommonConstant;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
@@ -29,7 +30,7 @@ public class RedisKeyTableKeyColumnCellFactory<S> implements Callback<TableColum
                 setText(null);
                 setGraphic(null);
             } else {
-                setText(new String(item));
+                setText(new String(item, CommonConstant.CHARSET_UTF8));
             }
         }
     }

@@ -4,6 +4,7 @@ version '1.0'
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'application'
+apply plugin: 'javafx-gradle-plugin'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 
@@ -13,11 +14,15 @@ buildscript {
         maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
         mavenLocal()
     }
+    dependencies {
+        classpath 'de.dynamicfiles.projects.gradle.plugins:javafx-gradle-plugin:8.8.2'
+    }
 
 }
 
 [compileJava, compileTestJava]*.options*.encoding = "UTF-8"
 
+mainClassName = 'com.jean.redis.client.MainApplication'
 repositories {
     maven {
         url "http://maven.aliyun.com/nexus/content/groups/public"
@@ -34,12 +39,38 @@ dependencies {
 }
 
 
-jar {
+/*jar {
     manifest {
-        attributes('Implementation-Version': version,
-                'JavaFX-Application-Class': 'com.jean.redis.client.MainApplication',
-                'Main-Class': 'com/javafx/main/Main'
-        )
+        attributes(['Implementation-Version'  : version,
+                    'JavaFX-Application-Class': 'com.jean.redis.client.MainApplication',
+                    'Main-Class'              : 'com/javafx/main/Main'])
     }
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+//    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}*/
+
+jfx {
+    // gradle common
+    jfxMainAppJarName = "redis-client.jar"
+    jfxAppOutputDir = "build/jfx/app"
+    mainClass = 'com.jean.redis.client.MainApplication'
+
+    // gradle native
+    appName = "redis-client"
+    vendor = "黄老邪"
+    jvmArgs = ["-Xmx512M",                      //堆最大
+               "-Xms256M",                      //堆初始
+               "-Xmn200M",                      //新生代
+               "-Xss1M",                        //线程栈
+               "-XX:MaxMetaspaceSize=128M",
+               "-XX:MetaspaceSize=128M",
+               "-XX:+UseParallelGC",
+               "-XX:+UseAdaptiveSizePolicy",
+               "-XX:MaxGCPauseMillis=100",
+               "-XX:+PrintGCDetails",
+               "-XX:+PrintGCDateStamps",
+               "-XX:+PrintCommandLineFlags",
+               "-verbose:class"]
+    jvmProperties = [:]
+    userJvmArgs = [:]
+    launcherArguments = ["redis-client", "1.0.0-release"]
 }
