@@ -69,8 +69,6 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public TableColumn<RedisKey, Number> ttlColumn;
     @FXML
-    public TreeTableView treeTableView;
-    @FXML
     public ListView<byte[]> valueListView;
     @FXML
     private TextArea valueTextArea;
@@ -138,7 +136,6 @@ public class MainController implements Initializable, AutoCloseable {
         this.initializeMenuBar();
         this.initializeSearch();
         this.initializeTreeView();
-        this.initializeTreeTableView();
         this.initializeKeyTableView();
         this.initializeValueListView();
         this.initializeTaskBar();
@@ -286,10 +283,6 @@ public class MainController implements Initializable, AutoCloseable {
             }
         });
     }
-
-    private void initializeTreeTableView() {
-    }
-
 
     /**
      * 初始化 redis key 表格
