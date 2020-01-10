@@ -2,12 +2,12 @@ package com.jean.redis.client.item;
 
 import javafx.scene.control.ContextMenu;
 
-public interface ContextMenuable {
+public interface Menuable {
 
     /**
      * 菜单
      *
-     * @return
+     * @return ContextMenu
      */
     ContextMenu getContextMenu();
 }

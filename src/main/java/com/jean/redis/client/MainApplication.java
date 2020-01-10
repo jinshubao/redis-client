@@ -69,7 +69,11 @@ public class MainApplication extends Application {
         Parent root = loader.load();
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
-        stage.setTitle(StringUtils.join(params, " "));
+        String title = StringUtils.join(params, " ");
+        if (StringUtils.isEmpty(title)) {
+            title = "redis client";
+        }
+        stage.setTitle(title);
         stage.getIcons().add(new Image(ResourceLoader.Image.redis_logo_32));
         stage.setScene(scene);
         stage.show();

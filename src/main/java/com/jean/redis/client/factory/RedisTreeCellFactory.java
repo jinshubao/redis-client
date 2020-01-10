@@ -1,21 +1,20 @@
 package com.jean.redis.client.factory;
 
 
-import com.jean.redis.client.item.ContextMenuable;
+import com.jean.redis.client.item.Menuable;
+import com.jean.redis.client.item.MouseClickable;
+import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.MouseEvent;
 import javafx.util.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by jinshubao on 2016/11/25.
  */
 public class RedisTreeCellFactory implements Callback<TreeView<Object>, TreeCell<Object>> {
-
-    private static Logger logger = LoggerFactory.getLogger(RedisTreeCellFactory.class);
 
     @Override
     public TreeCell<Object> call(TreeView<Object> param) {
@@ -25,7 +24,13 @@ public class RedisTreeCellFactory implements Callback<TreeView<Object>, TreeCell
     static class RedisServerTreeCell extends TreeCell<Object> {
 
         public RedisServerTreeCell() {
-
+            setOnMouseClicked(event -> {
+                TreeItem<Object> treeItem = getTreeItem();
+                if (treeItem instanceof MouseClickable) {
+                    EventHandler<MouseEvent> eventHandler = ((MouseClickable) treeItem).getClickEventHandler();
+                    eventHandler.handle(event);
+                }
+            });
         }
 
         @Override
@@ -38,8 +43,8 @@ public class RedisTreeCellFactory implements Callback<TreeView<Object>, TreeCell
             } else {
                 setText(item.toString());
                 TreeItem<Object> treeItem = getTreeItem();
-                if (treeItem instanceof ContextMenuable) {
-                    ContextMenuable treeContextMenu = (ContextMenuable) treeItem;
+                if (treeItem instanceof Menuable) {
+                    Menuable treeContextMenu = (Menuable) treeItem;
                     ContextMenu contextMenu = treeContextMenu.getContextMenu();
                     this.setContextMenu(contextMenu);
                 }

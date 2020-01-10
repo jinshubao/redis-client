@@ -5,8 +5,7 @@ import com.jean.redis.client.ctrl.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
 import com.jean.redis.client.dialog.RedisServerInfoDialog;
 import com.jean.redis.client.factory.*;
-import com.jean.redis.client.handler.RedisDatabaseItemMenuActionHandler;
-import com.jean.redis.client.handler.RedisServerItemMenuActionHandler;
+import com.jean.redis.client.handler.*;
 import com.jean.redis.client.item.RedisDatabaseItem;
 import com.jean.redis.client.item.RedisRootItem;
 import com.jean.redis.client.item.RedisServerItem;
@@ -17,6 +16,7 @@ import com.jean.redis.client.task.RedisConnectionPoolTask;
 import com.jean.redis.client.task.RedisKeysTask;
 import com.jean.redis.client.task.RedisServerInfoTask;
 import com.jean.redis.client.task.RedisValueTask;
+import com.jean.redis.client.util.MouseEventUtils;
 import io.lettuce.core.AbstractRedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
 import javafx.beans.binding.Bindings;
@@ -32,14 +32,15 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.MouseEvent;
 import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -91,22 +92,16 @@ public class MainController implements Initializable, AutoCloseable {
     private RedisValueListCellFactory redisValueListCellFactory;
     private TableIndexColumnCellFactory tableIndexColumnCellFactory;
 
-    private RedisRootItem serverTreeViewRootItem;
-
     private ProgressIndicatorPlaceholder keyProgressIndicator;
     private ProgressIndicatorPlaceholder valueProgressIndicator;
 
-    private RedisServerItemMenuActionHandler openConnectionActionEventHandler;
-    private RedisServerItemMenuActionHandler closeConnectionActionEventHandler;
-    private RedisServerItemMenuActionHandler deleteConnectionActionEventHandler;
-    private RedisServerItemMenuActionHandler connectionPropertyActionEventHandler;
+    private MenuBarActionEventHandler menuBarActionEventHandler;
 
-    private RedisDatabaseItemMenuActionHandler refreshDatabaseActionEventHandler;
-    private RedisDatabaseItemMenuActionHandler flushDatabaseActionEventHandler;
+    private RedisRootItemActionEventHandler redisRootItemActionEventHandler;
+    private RedisServerItemActionEventHandler redisServerItemActionEventHandler;
+    private RedisDatabaseItemActionEventHandler redisDatabaseItemActionEventHandler;
 
-    private EventHandler<ActionEvent> newConnectionActionEventHandler;
-    private EventHandler<ActionEvent> aboutActionEventHandler;
-    private EventHandler<ActionEvent> searchActionEventHandler;
+    private RedisKeyActionEventHandler redisKeyActionEventHandler;
 
     private EventHandler<WorkerStateEvent> keyTaskSuccessEventHandler;
     private EventHandler<WorkerStateEvent> keyTaskScheduledEventHandler;
@@ -129,8 +124,8 @@ public class MainController implements Initializable, AutoCloseable {
      */
     @Override
     public void initialize(URL url, ResourceBundle bundle) {
-        this.initializeFactory();
         this.initializeActionEventHandler();
+        this.initializeFactory();
         this.initializeWorkerStateEventHandler();
         this.initializeProgressIndicator();
         this.initializeMenuBar();
@@ -141,54 +136,26 @@ public class MainController implements Initializable, AutoCloseable {
         this.initializeTaskBar();
     }
 
-    private void initializeFactory() {
-        this.redisTreeCellFactory = new RedisTreeCellFactory();
-        this.redisKeyTableRowFactory = new RedisKeyTableRowFactory();
-        this.redisKeyTableKeyColumnCellFactory = new RedisKeyTableKeyColumnCellFactory();
-        this.redisValueListCellFactory = new RedisValueListCellFactory();
-        tableIndexColumnCellFactory = new TableIndexColumnCellFactory();
-    }
 
     /**
      * 初始化事件处理器
      */
     private void initializeActionEventHandler() {
-        //新建连接
-        //noinspection CodeBlock2Expr
-        newConnectionActionEventHandler = (event -> {
-            connectionDialog().showAndWait().ifPresent(serverProperty -> {
-                RedisServerItem serverItem = new RedisServerItem(serverProperty,
-                        openConnectionActionEventHandler, closeConnectionActionEventHandler,
-                        deleteConnectionActionEventHandler, connectionPropertyActionEventHandler);
-                serverItem.setExpanded(false);
-                serverTreeViewRootItem.getChildren().add(serverItem);
-            });
-        });
-        openConnectionActionEventHandler = (treeItem, menuItem, serverProperty) -> this.openConnection(treeItem, serverProperty);
-        closeConnectionActionEventHandler = (treeItem, menuItem, serverProperty) -> this.closeConnectionPool(treeItem, serverProperty);
-        connectionPropertyActionEventHandler = (treeItem, menuItem, server) -> this.serverInfo(server);
-        deleteConnectionActionEventHandler = (treeItem, menuItem, serverProperty) -> {
-            this.closeConnectionPool(treeItem, serverProperty);
-            treeItem.getParent().getChildren().remove(treeItem);
-        };
-        aboutActionEventHandler = (event -> {
-
-        });
-        searchActionEventHandler = (event -> {
-
-        });
-
-        refreshDatabaseActionEventHandler = (treeItem, menuItem, serverProperty, database) -> {
-            RedisKeysTask task = startRefreshKeyTask(serverProperty, database);
-            menuItem.disableProperty().unbind();
-            menuItem.disableProperty().bind(task.runningProperty());
-        };
-        flushDatabaseActionEventHandler = (treeItem, menuItem, serverProperty, database) -> {
-            RedisKeysTask task = startRefreshKeyTask(serverProperty, database);
-            menuItem.disableProperty().unbind();
-            menuItem.disableProperty().bind(task.runningProperty());
-        };
+        menuBarActionEventHandler = new MenuBarActionEventHandlerImpl();
+        redisRootItemActionEventHandler = new RedisRootItemActionEventHandlerImpl();
+        redisServerItemActionEventHandler = new RedisServerItemActionEventHandlerImpl();
+        redisDatabaseItemActionEventHandler = new RedisDatabaseItemActionEventHandlerImpl();
+        redisKeyActionEventHandler = new RedisKeyActionEventHandlerImpl();
     }
+
+    private void initializeFactory() {
+        this.redisTreeCellFactory = new RedisTreeCellFactory();
+        this.redisKeyTableRowFactory = new RedisKeyTableRowFactory(redisKeyActionEventHandler);
+        this.redisKeyTableKeyColumnCellFactory = new RedisKeyTableKeyColumnCellFactory();
+        this.redisValueListCellFactory = new RedisValueListCellFactory();
+        tableIndexColumnCellFactory = new TableIndexColumnCellFactory();
+    }
+
 
     /**
      * 初始化异步任务事件处理器
@@ -231,15 +198,17 @@ public class MainController implements Initializable, AutoCloseable {
      * 初始化菜单栏
      */
     private void initializeMenuBar() {
-        newConnectionMenuItem.setOnAction(newConnectionActionEventHandler);
-        aboutMenuItem.setOnAction(aboutActionEventHandler);
+        newConnectionMenuItem.setOnAction(event -> menuBarActionEventHandler.create(event));
+        aboutMenuItem.setOnAction(event -> menuBarActionEventHandler.about(event));
     }
 
     /**
      * 初始化搜索功能
      */
     private void initializeSearch() {
-        searchButton.setOnAction(searchActionEventHandler);
+        searchButton.setOnAction(event -> {
+
+        });
     }
 
     /**
@@ -254,11 +223,11 @@ public class MainController implements Initializable, AutoCloseable {
      * 初始化左侧树形结构
      */
     private void initializeTreeView() {
-        serverTreeViewRootItem = new RedisRootItem("服务器列表", newConnectionActionEventHandler);
-        serverTreeViewRootItem.setExpanded(true);
+        RedisRootItem rootItem = new RedisRootItem("服务器列表", redisRootItemActionEventHandler);
+        rootItem.setExpanded(true);
 
         serverTreeView.setCellFactory(redisTreeCellFactory);
-        serverTreeView.setRoot(serverTreeViewRootItem);
+        serverTreeView.setRoot(rootItem);
 
         //切换数据库
         serverTreeView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -296,9 +265,9 @@ public class MainController implements Initializable, AutoCloseable {
         ttlColumn.setCellValueFactory(param -> param.getValue().ttlProperty());
         keyTableView.setPlaceholder(keyProgressIndicator);
         keyTableView.setRowFactory(redisKeyTableRowFactory);
-        keyTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                startRefreshValueTask(newValue.getServer(), newValue.getDatabase(), newValue.getKey());
+        keyTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, redisKey) -> {
+            if (redisKey != null) {
+                startRefreshValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
             }
         });
     }
@@ -337,10 +306,6 @@ public class MainController implements Initializable, AutoCloseable {
         serverInfoLabel.textProperty().bind(stringBinding);
     }
 
-    private CreateRedisServerDialog connectionDialog() {
-        RedisServerProperty property = new RedisServerProperty();
-        return CreateRedisServerDialog.newInstance(property);
-    }
 
     private List<Task> keyTaskList = new ArrayList();
     private List<Task> valueTaskList = new ArrayList();
@@ -384,50 +349,6 @@ public class MainController implements Initializable, AutoCloseable {
 
 
     /**
-     * 初始化连接池
-     *
-     * @param serverItem     treeItem
-     * @param serverProperty server
-     */
-    private void openConnection(TreeItem serverItem, RedisServerProperty serverProperty) {
-        if (serverItem.isExpanded()) {
-            return;
-        }
-        RedisConnectionPoolTask task = RedisTaskFactory.createRedisPoolTask(serverProperty);
-        task.setOnSucceeded(event -> {
-            for (int i = 0; i < 16; i++) {
-                TreeItem item = new RedisDatabaseItem(serverProperty, i, refreshDatabaseActionEventHandler, flushDatabaseActionEventHandler);
-                serverItem.getChildren().add(item);
-            }
-            serverItem.setExpanded(true);
-            CommonConstant.putConnectionPool(serverProperty.getUuid(), task.getValue());
-        });
-        executorService.execute(task);
-    }
-
-    private void closeConnectionPool(TreeItem serverItem, RedisServerProperty serverProperty) {
-        if (!serverItem.isExpanded()) {
-            return;
-        }
-        keyTableView.getItems().clear();
-        valueListView.getItems().clear();
-        ObjectPool<StatefulRedisConnection<byte[], byte[]>> pool = CommonConstant.removeConnectionPool(serverProperty.getUuid());
-        pool.close();
-        serverItem.getChildren().clear();
-        serverItem.setExpanded(false);
-    }
-
-
-    private void serverInfo(RedisServerProperty serverProperty) {
-        RedisServerInfoTask task = RedisTaskFactory.createServerInfoTask(serverProperty);
-        RedisServerInfoDialog dialog = RedisServerInfoDialog.newInstance();
-        dialog.getTextArea().textProperty().bind(task.valueProperty());
-        executorService.execute(task);
-        dialog.show();
-    }
-
-
-    /**
      * 主程序退出回调
      */
     @Override
@@ -436,5 +357,172 @@ public class MainController implements Initializable, AutoCloseable {
         CommonConstant.GLOBAL_REDIS_CONNECTION_POOL_CACHE.values().forEach(ObjectPool::close);
         CommonConstant.GLOBAL_REDIS_CLIENT_CACHE.values().forEach(AbstractRedisClient::shutdownAsync);
         executorService.shutdown();
+    }
+
+    private void addNewServer() {
+        connectionDialog().showAndWait().ifPresent(property -> {
+            RedisServerItem serverItem = new RedisServerItem(property, redisServerItemActionEventHandler);
+            serverItem.setExpanded(false);
+            serverTreeView.getRoot().getChildren().add(serverItem);
+        });
+    }
+
+    private void connectServer(RedisServerItem treeItem, RedisServerProperty serverProperty) {
+        RedisConnectionPoolTask task = RedisTaskFactory.createRedisPoolTask(serverProperty);
+        task.setOnSucceeded(event -> {
+            for (int i = 0; i < 16; i++) {
+                TreeItem item = new RedisDatabaseItem(serverProperty, i, redisDatabaseItemActionEventHandler);
+                treeItem.getChildren().add(item);
+            }
+            treeItem.setOpen(true);
+            treeItem.setExpanded(true);
+            CommonConstant.putConnectionPool(serverProperty.getUuid(), task.getValue());
+        });
+        executorService.execute(task);
+    }
+
+    private CreateRedisServerDialog connectionDialog() {
+        RedisServerProperty property = new RedisServerProperty();
+        property.setHost("127.0.0.1");
+        property.setPort(6379);
+        property.setPassword(null);
+        return CreateRedisServerDialog.newInstance(property);
+    }
+
+
+    private class MenuBarActionEventHandlerImpl implements MenuBarActionEventHandler {
+
+        @Override
+        public void create(ActionEvent actionEvent) {
+            addNewServer();
+        }
+
+        @Override
+        public void exit(ActionEvent actionEvent) {
+
+        }
+
+        @Override
+        public void about(ActionEvent actionEvent) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("About");
+            alert.setHeaderText("Redis客户端工具");
+            alert.setContentText("暂不支持集群模式和哨兵模式");
+            alert.show();
+        }
+    }
+
+
+    private class RedisRootItemActionEventHandlerImpl implements RedisRootItemActionEventHandler {
+
+        @Override
+        public void click(MouseEvent mouseEvent, TreeItem treeItem) {
+            //
+        }
+
+        @Override
+        public void create(ActionEvent actionEvent, TreeItem treeItem) {
+            addNewServer();
+        }
+    }
+
+    private class RedisServerItemActionEventHandlerImpl implements RedisServerItemActionEventHandler {
+
+        @Override
+        public void click(MouseEvent mouseEvent, RedisServerItem treeItem, RedisServerProperty serverProperty) {
+            if (MouseEventUtils.isDoubleClick(mouseEvent) && !treeItem.isOpen()) {
+                connectServer(treeItem, serverProperty);
+            }
+        }
+
+        @Override
+        public void open(ActionEvent actionEvent, RedisServerItem treeItem, RedisServerProperty serverProperty) {
+            if (treeItem.isOpen()) {
+                return;
+            }
+            connectServer(treeItem, serverProperty);
+        }
+
+        @Override
+        public void close(ActionEvent event, RedisServerItem treeItem, RedisServerProperty serverProperty) {
+            disconnectServer(treeItem, serverProperty);
+        }
+
+        @Override
+        public void delete(ActionEvent event, RedisServerItem treeItem, RedisServerProperty serverProperty) {
+            disconnectServer(treeItem, serverProperty);
+            treeItem.getParent().getChildren().remove(treeItem);
+        }
+
+        @Override
+        public void property(ActionEvent event, RedisServerItem treeItem, RedisServerProperty serverProperty) {
+            RedisServerInfoTask task = RedisTaskFactory.createServerInfoTask(serverProperty);
+            RedisServerInfoDialog dialog = RedisServerInfoDialog.newInstance();
+            dialog.getTextArea().textProperty().bind(task.valueProperty());
+            executorService.execute(task);
+            dialog.show();
+        }
+
+
+        private void disconnectServer(RedisServerItem serverItem, RedisServerProperty serverProperty) {
+            if (!serverItem.isOpen()) {
+                return;
+            }
+            keyTableView.getItems().clear();
+            valueListView.getItems().clear();
+            ObjectPool<StatefulRedisConnection<byte[], byte[]>> pool = CommonConstant.removeConnectionPool(serverProperty.getUuid());
+            pool.close();
+            serverItem.getChildren().clear();
+            serverItem.setExpanded(false);
+            serverItem.setOpen(false);
+        }
+    }
+
+
+    private class RedisDatabaseItemActionEventHandlerImpl implements RedisDatabaseItemActionEventHandler {
+
+        @Override
+        public void click(MouseEvent mouseEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database) {
+            if (MouseEventUtils.isDoubleClick(mouseEvent)) {
+                startRefreshKeyTask(serverProperty, database);
+            }
+        }
+
+        @Override
+        public void refresh(ActionEvent actionEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database) {
+            RedisKeysTask task = startRefreshKeyTask(serverProperty, database);
+            MenuItem menuItem = (MenuItem) actionEvent.getSource();
+            menuItem.disableProperty().unbind();
+            menuItem.disableProperty().bind(task.runningProperty());
+        }
+
+        @Override
+        public void flush(ActionEvent actionEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database) {
+            //TODO
+            this.refresh(actionEvent, treeItem, serverProperty, database);
+        }
+    }
+
+    private class RedisKeyActionEventHandlerImpl implements RedisKeyActionEventHandler {
+
+        @Override
+        public void click(MouseEvent mouseEvent, RedisKey redisKey) {
+            if (MouseEventUtils.isDoubleClick(mouseEvent) && redisKey != null) {
+                startRefreshValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
+            }
+        }
+
+        @Override
+        public void copy(ActionEvent actionEvent, RedisKey redisKey) {
+            Map<DataFormat, Object> content = new HashMap<>();
+            content.put(DataFormat.PLAIN_TEXT, new String(redisKey.getKey(), CommonConstant.CHARSET_UTF8));
+            Clipboard.getSystemClipboard().setContent(content);
+        }
+
+        @Override
+        public void delete(ActionEvent actionEvent, RedisKey redisKey) {
+            keyTableView.getItems().remove(redisKey);
+        }
+
     }
 }
