@@ -73,7 +73,11 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public ListView<byte[]> valueListView;
     @FXML
+    private TextField keyTextFiled;
+    @FXML
     private TextArea valueTextArea;
+    @FXML
+    private Button saveButton;
     @FXML
     public Label messageLabel;
     @FXML
@@ -280,14 +284,26 @@ public class MainController implements Initializable, AutoCloseable {
         valueListView.setCellFactory(redisValueListCellFactory);
         valueListView.setPlaceholder(valueProgressIndicator);
         valueListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        valueTextArea.setWrapText(true);
-        valueTextArea.setEditable(false);
+        valueListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                valueTextArea.setText(new String(newValue, CommonConstant.CHARSET_UTF8));
+            } else {
+                keyTextFiled.setText(null);
+                valueTextArea.setText(null);
+            }
+        });
 
+        valueTextArea.setWrapText(true);
+
+
+/*
+
+        valueTextArea.setEditable(true);
         StringBinding stringBinding = Bindings.createStringBinding(() -> {
             byte[] item = valueListView.getSelectionModel().getSelectedItem();
             return item == null ? null : new String(item, CommonConstant.CHARSET_UTF8);
         }, valueListView.getSelectionModel().selectedItemProperty());
-        valueTextArea.textProperty().bind(stringBinding);
+        valueTextArea.textProperty().bind(stringBinding);*/
     }
 
     private void initializeTaskBar() {
@@ -384,9 +400,9 @@ public class MainController implements Initializable, AutoCloseable {
 
     private CreateRedisServerDialog connectionDialog() {
         RedisServerProperty property = new RedisServerProperty();
-        property.setHost("127.0.0.1");
+        property.setHost("101.132.156.127");
         property.setPort(6379);
-        property.setPassword(null);
+        property.setPassword("123!=-09][po");
         return CreateRedisServerDialog.newInstance(property);
     }
 
