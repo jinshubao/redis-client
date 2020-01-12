@@ -24,7 +24,7 @@ public class RedisValueTask extends BaseTask<RedisValue<?>> {
 
 
     @Override
-    protected RedisValue call() throws Exception {
+    protected RedisValue<?> call() throws Exception {
         try (StatefulRedisConnection<byte[], byte[]> connection = getConnection()) {
             RedisCommands<byte[], byte[]> commands = connection.sync();
             commands.select(database);

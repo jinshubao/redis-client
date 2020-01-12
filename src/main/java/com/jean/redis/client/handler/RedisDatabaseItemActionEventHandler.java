@@ -15,7 +15,7 @@ public interface RedisDatabaseItemActionEventHandler {
      * @param serverProperty property
      * @param database       db
      */
-    void click(MouseEvent mouseEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database);
+    void click(MouseEvent mouseEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database);
 
 
     /**
@@ -26,7 +26,7 @@ public interface RedisDatabaseItemActionEventHandler {
      * @param serverProperty property
      * @param database       db
      */
-    void refresh(ActionEvent actionEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database);
+    void refresh(ActionEvent actionEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database);
 
     /**
      * 清空
@@ -36,7 +36,7 @@ public interface RedisDatabaseItemActionEventHandler {
      * @param serverProperty property
      * @param database       db
      */
-    void flush(ActionEvent actionEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database);
+    void flush(ActionEvent actionEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database);
 
 
 }

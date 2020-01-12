@@ -4,7 +4,9 @@ import com.jean.redis.client.model.RedisKey;
 import javafx.event.ActionEvent;
 import javafx.scene.input.MouseEvent;
 
-
+/**
+ * redis key 列表 事件处理器
+ */
 public interface RedisKeyActionEventHandler {
 
     /**

@@ -28,7 +28,6 @@ public abstract class StringUtils {
             return null;
         }
         StringBuilder builder = new StringBuilder();
-
         for (int i = 0; i < string.length(); ++i) {
             char at = string.charAt(i);
             if (at != '\n' && at != '\f' && at != '\r' && at != '\t') {
@@ -38,9 +37,9 @@ public abstract class StringUtils {
         return builder.toString().trim();
     }
 
-    public static String join(Collection collection, String s) {
+    public static String join(Collection<?> collection, String s) {
         StringBuilder builder = new StringBuilder();
-        for (Iterator iterator = collection.iterator(); iterator.hasNext(); builder.append((String) iterator.next())) {
+        for (Iterator<?> iterator = collection.iterator(); iterator.hasNext(); builder.append(iterator.next())) {
             if (builder.length() != 0) {
                 builder.append(s);
             }

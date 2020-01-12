@@ -1,7 +1,6 @@
 package com.jean.redis.client.factory;
 
 
-import com.jean.redis.client.constant.CommonConstant;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -10,6 +9,7 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.DataFormat;
 import javafx.util.Callback;
 
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,15 +19,23 @@ import java.util.Map;
  */
 public class RedisValueListCellFactory implements Callback<ListView<byte[]>, ListCell<byte[]>> {
 
+    private final Charset charset;
+
+    public RedisValueListCellFactory(Charset charset) {
+        this.charset = charset;
+    }
+
     @Override
     public ListCell<byte[]> call(ListView<byte[]> param) {
-        return new RedisValueListCell();
+        return new RedisValueListCell(charset);
     }
 
     private static class RedisValueListCell extends ListCell<byte[]> {
 
+        private final Charset charset;
 
-        public RedisValueListCell() {
+        public RedisValueListCell(Charset charset) {
+            this.charset = charset;
             setContextMenu(createContextMenu());
         }
 
@@ -37,7 +45,7 @@ public class RedisValueListCellFactory implements Callback<ListView<byte[]>, Lis
             if (empty || item == null) {
                 setText(null);
             } else {
-                setText(new String(item, CommonConstant.CHARSET_UTF8));
+                setText(new String(item, charset));
             }
         }
 
@@ -46,14 +54,11 @@ public class RedisValueListCellFactory implements Callback<ListView<byte[]>, Lis
             MenuItem copy = new MenuItem("复制");
             copy.setOnAction(event -> {
                 Map<DataFormat, Object> content = new HashMap<>();
-                content.put(DataFormat.PLAIN_TEXT, new String(getItem(), CommonConstant.CHARSET_UTF8));
+                content.put(DataFormat.PLAIN_TEXT, new String(getItem(), charset));
                 Clipboard.getSystemClipboard().setContent(content);
             });
             contextMenu.getItems().add(copy);
             return contextMenu;
         }
-
     }
-
-
 }

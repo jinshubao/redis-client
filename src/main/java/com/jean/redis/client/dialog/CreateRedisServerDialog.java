@@ -78,7 +78,7 @@ public class CreateRedisServerDialog extends Dialog<RedisServerProperty> {
                 property.setHost(hostFiled.getText());
                 String port = portFiled.getText();
                 if (port != null && !port.isEmpty()) {
-                    property.setPort(Integer.valueOf(port));
+                    property.setPort(Integer.parseInt(port));
                 }
                 String password = passwordField.getText();
                 if (password != null) {
@@ -103,9 +103,5 @@ public class CreateRedisServerDialog extends Dialog<RedisServerProperty> {
 
     public static CreateRedisServerDialog newInstance(RedisServerProperty defaultValue) {
         return new CreateRedisServerDialog(defaultValue);
-    }
-
-    public static CreateRedisServerDialog newInstance() {
-        return new CreateRedisServerDialog(null);
     }
 }

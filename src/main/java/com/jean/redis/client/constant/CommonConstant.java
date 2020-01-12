@@ -5,6 +5,7 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import org.apache.commons.pool2.ObjectPool;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CommonConstant {
 
-    public static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+    public static final Charset CHARSET_UTF8 = StandardCharsets.UTF_8;
 
     public static final int THREAD_POOL_SIZE = 10;
 

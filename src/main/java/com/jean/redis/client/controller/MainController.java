@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 
@@ -60,7 +61,7 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public TableView<RedisKey> keyTableView;
     @FXML
-    public TableColumn keyNoColumn;
+    public TableColumn<Object, Object> keyNoColumn;
     @FXML
     public TableColumn<RedisKey, byte[]> keyColumn;
     @FXML
@@ -145,14 +146,14 @@ public class MainController implements Initializable, AutoCloseable {
         redisRootItemActionEventHandler = new RedisRootItemActionEventHandlerImpl();
         redisServerItemActionEventHandler = new RedisServerItemActionEventHandlerImpl();
         redisDatabaseItemActionEventHandler = new RedisDatabaseItemActionEventHandlerImpl();
-        redisKeyActionEventHandler = new RedisKeyActionEventHandlerImpl();
+        redisKeyActionEventHandler = new RedisKeyActionEventHandlerImpl(CommonConstant.CHARSET_UTF8);
     }
 
     private void initializeFactory() {
         this.redisTreeCellFactory = new RedisTreeCellFactory();
         this.redisKeyTableRowFactory = new RedisKeyTableRowFactory(redisKeyActionEventHandler);
-        this.redisKeyTableKeyColumnCellFactory = new RedisKeyTableKeyColumnCellFactory();
-        this.redisValueListCellFactory = new RedisValueListCellFactory();
+        this.redisKeyTableKeyColumnCellFactory = new RedisKeyTableKeyColumnCellFactory(CommonConstant.CHARSET_UTF8);
+        this.redisValueListCellFactory = new RedisValueListCellFactory(CommonConstant.CHARSET_UTF8);
         tableIndexColumnCellFactory = new TableIndexColumnCellFactory();
     }
 
@@ -307,8 +308,8 @@ public class MainController implements Initializable, AutoCloseable {
     }
 
 
-    private List<Task> keyTaskList = new ArrayList();
-    private List<Task> valueTaskList = new ArrayList();
+    private List<Task<?>> keyTaskList = new ArrayList<>();
+    private List<Task<?>> valueTaskList = new ArrayList<>();
 
     /**
      * 启动获取 redis key 的后台任务
@@ -321,7 +322,7 @@ public class MainController implements Initializable, AutoCloseable {
     private RedisKeysTask startRefreshKeyTask(RedisServerProperty serverProperty, int database) {
         keyTaskList.forEach(item -> item.cancel(false));
         keyTaskList.clear();
-        RedisKeysTask task = RedisTaskFactory.createKeyTask(serverProperty, database);
+        RedisKeysTask task = new RedisKeysTask(serverProperty, database, CommonConstant.CHARSET_UTF8);
         task.setOnScheduled(keyTaskScheduledEventHandler);
         task.setOnSucceeded(keyTaskSuccessEventHandler);
         executorService.execute(task);
@@ -340,7 +341,7 @@ public class MainController implements Initializable, AutoCloseable {
     private void startRefreshValueTask(RedisServerProperty serverProperty, int database, byte[] key) {
         valueTaskList.forEach(item -> item.cancel(false));
         valueTaskList.clear();
-        RedisValueTask task = RedisTaskFactory.createValueTask(serverProperty, database, key);
+        RedisValueTask task = new RedisValueTask(serverProperty, database, key);
         task.setOnScheduled(valueTaskScheduledEventHandler);
         task.setOnSucceeded(valueTaskSuccessEventHandler);
         executorService.execute(task);
@@ -368,10 +369,10 @@ public class MainController implements Initializable, AutoCloseable {
     }
 
     private void connectServer(RedisServerItem treeItem, RedisServerProperty serverProperty) {
-        RedisConnectionPoolTask task = RedisTaskFactory.createRedisPoolTask(serverProperty);
+        RedisConnectionPoolTask task = new RedisConnectionPoolTask(serverProperty);
         task.setOnSucceeded(event -> {
             for (int i = 0; i < 16; i++) {
-                TreeItem item = new RedisDatabaseItem(serverProperty, i, redisDatabaseItemActionEventHandler);
+                RedisDatabaseItem item = new RedisDatabaseItem(serverProperty, i, redisDatabaseItemActionEventHandler);
                 treeItem.getChildren().add(item);
             }
             treeItem.setOpen(true);
@@ -416,12 +417,12 @@ public class MainController implements Initializable, AutoCloseable {
     private class RedisRootItemActionEventHandlerImpl implements RedisRootItemActionEventHandler {
 
         @Override
-        public void click(MouseEvent mouseEvent, TreeItem treeItem) {
+        public void click(MouseEvent mouseEvent, TreeItem<?> treeItem) {
             //
         }
 
         @Override
-        public void create(ActionEvent actionEvent, TreeItem treeItem) {
+        public void create(ActionEvent actionEvent, TreeItem<?> treeItem) {
             addNewServer();
         }
     }
@@ -456,7 +457,7 @@ public class MainController implements Initializable, AutoCloseable {
 
         @Override
         public void property(ActionEvent event, RedisServerItem treeItem, RedisServerProperty serverProperty) {
-            RedisServerInfoTask task = RedisTaskFactory.createServerInfoTask(serverProperty);
+            RedisServerInfoTask task = new RedisServerInfoTask(serverProperty);
             RedisServerInfoDialog dialog = RedisServerInfoDialog.newInstance();
             dialog.getTextArea().textProperty().bind(task.valueProperty());
             executorService.execute(task);
@@ -482,14 +483,14 @@ public class MainController implements Initializable, AutoCloseable {
     private class RedisDatabaseItemActionEventHandlerImpl implements RedisDatabaseItemActionEventHandler {
 
         @Override
-        public void click(MouseEvent mouseEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database) {
+        public void click(MouseEvent mouseEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database) {
             if (MouseEventUtils.isDoubleClick(mouseEvent)) {
                 startRefreshKeyTask(serverProperty, database);
             }
         }
 
         @Override
-        public void refresh(ActionEvent actionEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database) {
+        public void refresh(ActionEvent actionEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database) {
             RedisKeysTask task = startRefreshKeyTask(serverProperty, database);
             MenuItem menuItem = (MenuItem) actionEvent.getSource();
             menuItem.disableProperty().unbind();
@@ -497,13 +498,19 @@ public class MainController implements Initializable, AutoCloseable {
         }
 
         @Override
-        public void flush(ActionEvent actionEvent, TreeItem treeItem, RedisServerProperty serverProperty, int database) {
+        public void flush(ActionEvent actionEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database) {
             //TODO
             this.refresh(actionEvent, treeItem, serverProperty, database);
         }
     }
 
     private class RedisKeyActionEventHandlerImpl implements RedisKeyActionEventHandler {
+
+        private final Charset charset;
+
+        private RedisKeyActionEventHandlerImpl(Charset charset) {
+            this.charset = charset;
+        }
 
         @Override
         public void click(MouseEvent mouseEvent, RedisKey redisKey) {
@@ -515,7 +522,7 @@ public class MainController implements Initializable, AutoCloseable {
         @Override
         public void copy(ActionEvent actionEvent, RedisKey redisKey) {
             Map<DataFormat, Object> content = new HashMap<>();
-            content.put(DataFormat.PLAIN_TEXT, new String(redisKey.getKey(), CommonConstant.CHARSET_UTF8));
+            content.put(DataFormat.PLAIN_TEXT, new String(redisKey.getKey(), charset));
             Clipboard.getSystemClipboard().setContent(content);
         }
 

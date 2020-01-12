@@ -22,30 +22,24 @@ public class RedisServerItem extends TreeItem<Object> implements Menuable, Mouse
 
     private final RedisServerItemActionEventHandler handler;
 
-    private MenuItem openItem;
-    private MenuItem closeItem;
-    private MenuItem propertyItem;
-    private MenuItem deleteItem;
-
-    public RedisServerItem(RedisServerProperty serverProperty,
-                           RedisServerItemActionEventHandler handler) {
+    public RedisServerItem(RedisServerProperty serverProperty, RedisServerItemActionEventHandler handler) {
         super(serverProperty.toString());
         this.serverProperty = serverProperty;
         this.handler = handler;
 
-        openItem = new MenuItem("打开连接");
+        MenuItem openItem = new MenuItem("打开连接");
         openItem.disableProperty().bind(openProperty());
         openItem.setOnAction(event -> this.handler.open(event, RedisServerItem.this, this.serverProperty));
 
-        closeItem = new MenuItem("关闭连接");
+        MenuItem closeItem = new MenuItem("关闭连接");
         closeItem.disableProperty().bind(openProperty().not());
         closeItem.setOnAction(event -> this.handler.close(event, RedisServerItem.this, this.serverProperty));
 
-        propertyItem = new MenuItem("连接属性");
+        MenuItem propertyItem = new MenuItem("连接属性");
         propertyItem.disableProperty().bind(openProperty().not());
         propertyItem.setOnAction(event -> this.handler.property(event, RedisServerItem.this, this.serverProperty));
 
-        deleteItem = new MenuItem("删除连接");
+        MenuItem deleteItem = new MenuItem("删除连接");
         deleteItem.setOnAction(event -> this.handler.delete(event, RedisServerItem.this, this.serverProperty));
         contextMenu = new ContextMenu();
         contextMenu.getItems().addAll(openItem, closeItem, propertyItem, deleteItem);

@@ -27,7 +27,7 @@ public class RedisConnectionPoolTask extends BaseTask<ObjectPool<StatefulRedisCo
         RedisURI redisURI = builder.build();
         RedisClient client = RedisClient.create(redisURI);
         CommonConstant.GLOBAL_REDIS_CLIENT_CACHE.put(serverProperty.getUuid(), client);
-        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+        GenericObjectPoolConfig<StatefulRedisConnection<byte[], byte[]>> poolConfig = new GenericObjectPoolConfig<>();
         return ConnectionPoolSupport.createGenericObjectPool(() -> client.connect(ByteArrayCodec.INSTANCE), poolConfig, true);
     }
 }

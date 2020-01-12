@@ -1,6 +1,5 @@
 package com.jean.redis.client.task;
 
-import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisServerProperty;
 import io.lettuce.core.KeyScanCursor;
@@ -9,7 +8,7 @@ import io.lettuce.core.ScanCursor;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 
-import javax.smartcardio.CommandAPDU;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -21,9 +20,12 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
 
     private final int database;
 
-    public RedisKeysTask(RedisServerProperty serverProperty, int database) {
+    private final Charset charset;
+
+    public RedisKeysTask(RedisServerProperty serverProperty, int database, Charset charset) {
         super(serverProperty);
         this.database = database;
+        this.charset = charset;
     }
 
     @Override
@@ -57,7 +59,7 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
                     break;
                 }
             } while (!scanCursor.isFinished());
-            value.sort(Comparator.comparing(o -> new String(o.getKey(), CommonConstant.CHARSET_UTF8)));
+            value.sort(Comparator.comparing(o -> new String(o.getKey(), charset)));
             return value;
         }
     }

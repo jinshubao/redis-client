@@ -3,9 +3,11 @@ package com.jean.redis.client.handler;
 import com.jean.redis.client.item.RedisServerItem;
 import com.jean.redis.client.model.RedisServerProperty;
 import javafx.event.ActionEvent;
-import javafx.scene.control.TreeItem;
 import javafx.scene.input.MouseEvent;
 
+/**
+ * 服务器信息节点事件处理器
+ */
 public interface RedisServerItemActionEventHandler {
 
 
