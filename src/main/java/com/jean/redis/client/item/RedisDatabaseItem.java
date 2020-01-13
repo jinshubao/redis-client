@@ -2,10 +2,13 @@ package com.jean.redis.client.item;
 
 import com.jean.redis.client.handler.RedisDatabaseItemActionEventHandler;
 import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.util.ResourceLoader;
 import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 
 public class RedisDatabaseItem extends TreeItem<Object> implements Menuable, MouseClickable {
@@ -26,10 +29,10 @@ public class RedisDatabaseItem extends TreeItem<Object> implements Menuable, Mou
         this.database = database;
         this.handler = handler;
 
-        MenuItem refreshItem = new MenuItem("刷新");
+        MenuItem refreshItem = new MenuItem("刷新", new ImageView(new Image(ResourceLoader.Image.refresh_16)));
         refreshItem.setOnAction(event -> this.handler.refresh(event, RedisDatabaseItem.this, this.serverProperty, this.database));
 
-        MenuItem flushItem = new MenuItem("清空");
+        MenuItem flushItem = new MenuItem("清空", new ImageView(new Image(ResourceLoader.Image.refresh_16)));
         flushItem.setOnAction(event -> this.handler.flush(event, RedisDatabaseItem.this, this.serverProperty, this.database));
 
         contextMenu = new ContextMenu();

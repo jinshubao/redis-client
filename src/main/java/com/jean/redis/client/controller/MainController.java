@@ -4,7 +4,10 @@ import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.ctrl.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
 import com.jean.redis.client.dialog.RedisServerInfoDialog;
-import com.jean.redis.client.factory.*;
+import com.jean.redis.client.factory.RedisKeyTableKeyColumnCellFactory;
+import com.jean.redis.client.factory.RedisKeyTableRowFactory;
+import com.jean.redis.client.factory.RedisTreeCellFactory;
+import com.jean.redis.client.factory.TableIndexColumnCellFactory;
 import com.jean.redis.client.handler.*;
 import com.jean.redis.client.item.RedisDatabaseItem;
 import com.jean.redis.client.item.RedisRootItem;
@@ -12,6 +15,7 @@ import com.jean.redis.client.item.RedisServerItem;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisServerProperty;
 import com.jean.redis.client.model.RedisValue;
+import com.jean.redis.client.model.ValueResult;
 import com.jean.redis.client.task.RedisConnectionPoolTask;
 import com.jean.redis.client.task.RedisKeysTask;
 import com.jean.redis.client.task.RedisServerInfoTask;
@@ -35,6 +39,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.MouseEvent;
+import javafx.util.Callback;
 import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +76,13 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public TableColumn<RedisKey, Number> ttlColumn;
     @FXML
-    public ListView<byte[]> valueListView;
+    public TableView<ValueResult> valueTableView;
+    @FXML
+    public TableColumn<ValueResult, byte[]> valueKeyColumn;
+    @FXML
+    public TableColumn<ValueResult, byte[]> valueColumn;
+    @FXML
+    public SplitPane valueSplitPane;
     @FXML
     private TextField keyTextFiled;
     @FXML
@@ -94,7 +105,6 @@ public class MainController implements Initializable, AutoCloseable {
     private RedisTreeCellFactory redisTreeCellFactory;
     private RedisKeyTableRowFactory redisKeyTableRowFactory;
     private RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory;
-    private RedisValueListCellFactory redisValueListCellFactory;
     private TableIndexColumnCellFactory tableIndexColumnCellFactory;
 
     private ProgressIndicatorPlaceholder keyProgressIndicator;
@@ -108,15 +118,12 @@ public class MainController implements Initializable, AutoCloseable {
 
     private RedisKeyActionEventHandler redisKeyActionEventHandler;
 
-    private EventHandler<WorkerStateEvent> keyTaskSuccessEventHandler;
-    private EventHandler<WorkerStateEvent> keyTaskScheduledEventHandler;
+    private EventHandler<WorkerStateEvent> keyTaskWorkerStateEventHandler;
 
-    private EventHandler<WorkerStateEvent> valueTaskScheduledEventHandler;
-    private EventHandler<WorkerStateEvent> valueTaskSuccessEventHandler;
+    private EventHandler<WorkerStateEvent> valueTaskWorkerStateEventHandler;
 
     private StringProperty server = new SimpleStringProperty(this, "server");
     private ObjectProperty<Integer> database = new SimpleObjectProperty<>(this, "database");
-
 
     public MainController(ExecutorService executorService) {
         this.executorService = executorService;
@@ -157,7 +164,6 @@ public class MainController implements Initializable, AutoCloseable {
         this.redisTreeCellFactory = new RedisTreeCellFactory();
         this.redisKeyTableRowFactory = new RedisKeyTableRowFactory(redisKeyActionEventHandler);
         this.redisKeyTableKeyColumnCellFactory = new RedisKeyTableKeyColumnCellFactory(CommonConstant.CHARSET_UTF8);
-        this.redisValueListCellFactory = new RedisValueListCellFactory(CommonConstant.CHARSET_UTF8);
         tableIndexColumnCellFactory = new TableIndexColumnCellFactory();
     }
 
@@ -167,33 +173,47 @@ public class MainController implements Initializable, AutoCloseable {
      */
     private void initializeWorkerStateEventHandler() {
         //redis key task scheduled event handler
-        keyTaskScheduledEventHandler = (event -> {
-            keyTableView.getItems().clear();
-            keyProgressIndicator.indicatorProgressProperty().unbind();
-            keyProgressIndicator.indicatorProgressProperty().bind(event.getSource().progressProperty());
-            keyProgressIndicator.indicatorVisibleProperty().unbind();
-            keyProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
-        });
-        //redis key task scheduled event handler
-        keyTaskSuccessEventHandler = (event -> {
-            List<RedisKey> value = (List<RedisKey>) event.getSource().getValue();
-            if (value != null) {
-                keyTableView.getItems().addAll(value);
+        keyTaskWorkerStateEventHandler = (event -> {
+            if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SCHEDULED) {
+                keyTableView.getItems().clear();
+                keyProgressIndicator.indicatorProgressProperty().unbind();
+                keyProgressIndicator.indicatorProgressProperty().bind(event.getSource().progressProperty());
+                keyProgressIndicator.indicatorVisibleProperty().unbind();
+                keyProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
+            } else if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SUCCEEDED) {
+                List<RedisKey> value = (List<RedisKey>) event.getSource().getValue();
+                if (value != null) {
+                    keyTableView.getItems().addAll(value);
+                }
             }
         });
+
         //redis value task success event handler
-        valueTaskScheduledEventHandler = (event -> {
-            valueListView.getItems().clear();
-            valueProgressIndicator.indicatorProgressProperty().unbind();
-            valueProgressIndicator.indicatorProgressProperty().bind(event.getSource().progressProperty());
-            valueProgressIndicator.indicatorVisibleProperty().unbind();
-            valueProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
-        });
-        //redis value task success event handler
-        valueTaskSuccessEventHandler = (event -> {
-            RedisValue<?> value = (RedisValue<?>) event.getSource().getValue();
-            if (value != null) {
-                valueListView.getItems().addAll(value.toList());
+        valueTaskWorkerStateEventHandler = (event -> {
+            if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SCHEDULED) {
+                valueTableView.getItems().clear();
+                valueProgressIndicator.indicatorProgressProperty().unbind();
+                valueProgressIndicator.indicatorProgressProperty().bind(event.getSource().progressProperty());
+                valueProgressIndicator.indicatorVisibleProperty().unbind();
+                valueProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
+            } else if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SUCCEEDED) {
+                RedisValue value = (RedisValue) event.getSource().getValue();
+                if (value != null) {
+                    if (CommonConstant.KeyType.STRING.equalsIgnoreCase(value.getType())) {
+                        valueSplitPane.getItems().remove(valueTableView);
+                    } else {
+                        if (!valueSplitPane.getItems().contains(valueTableView)) {
+                            valueSplitPane.getItems().add(0, valueTableView);
+                        }
+                    }
+                    valueKeyColumn.setVisible(CommonConstant.KeyType.HASH.equalsIgnoreCase(value.getType()));
+                    if (CommonConstant.KeyType.STRING.equalsIgnoreCase(value.getType())) {
+                        updateKeyValueText(value.getKey(), value.getValue().get(0).getValue());
+                    } else {
+                        updateKeyValueText(null, null);
+                        valueTableView.getItems().addAll(value.getValue());
+                    }
+                }
             }
         });
     }
@@ -275,35 +295,48 @@ public class MainController implements Initializable, AutoCloseable {
                 startRefreshValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
             }
         });
+
     }
 
     /**
      * 初始化 redis value 列表
      */
     private void initializeValueListView() {
-        valueListView.setCellFactory(redisValueListCellFactory);
-        valueListView.setPlaceholder(valueProgressIndicator);
-        valueListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-        valueListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                valueTextArea.setText(new String(newValue, CommonConstant.CHARSET_UTF8));
-            } else {
-                keyTextFiled.setText(null);
-                valueTextArea.setText(null);
+
+        Callback<TableColumn<ValueResult, byte[]>, TableCell<ValueResult, byte[]>> cellCallback = new Callback<TableColumn<ValueResult, byte[]>, TableCell<ValueResult, byte[]>>() {
+            @Override
+            public TableCell<ValueResult, byte[]> call(TableColumn<ValueResult, byte[]> param) {
+                return new TableCell<ValueResult, byte[]>() {
+                    @Override
+                    protected void updateItem(byte[] item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText(null);
+                        } else {
+                            setText(new String(item, CommonConstant.CHARSET_UTF8));
+                        }
+                    }
+                };
             }
-        });
+        };
 
         valueTextArea.setWrapText(true);
 
+        valueKeyColumn.setCellFactory(cellCallback);
+        valueKeyColumn.setCellValueFactory(param -> param.getValue().keyProperty());
 
-/*
+        valueColumn.setCellFactory(cellCallback);
+        valueColumn.setCellValueFactory(param -> param.getValue().valueProperty());
 
-        valueTextArea.setEditable(true);
-        StringBinding stringBinding = Bindings.createStringBinding(() -> {
-            byte[] item = valueListView.getSelectionModel().getSelectedItem();
-            return item == null ? null : new String(item, CommonConstant.CHARSET_UTF8);
-        }, valueListView.getSelectionModel().selectedItemProperty());
-        valueTextArea.textProperty().bind(stringBinding);*/
+        valueTableView.setPlaceholder(valueProgressIndicator);
+
+        valueTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                updateKeyValueText(newValue.getKey(), newValue.getValue());
+            } else {
+                updateKeyValueText(null, null);
+            }
+        });
     }
 
     private void initializeTaskBar() {
@@ -323,6 +356,19 @@ public class MainController implements Initializable, AutoCloseable {
         serverInfoLabel.textProperty().bind(stringBinding);
     }
 
+    private void updateKeyValueText(byte[] key, byte[] value) {
+        if (key != null) {
+            keyTextFiled.setText(new String(key, CommonConstant.CHARSET_UTF8));
+        } else {
+            keyTextFiled.setText(null);
+        }
+        if (value != null) {
+            valueTextArea.setText(new String(value, CommonConstant.CHARSET_UTF8));
+        } else {
+            valueTextArea.setText(null);
+        }
+    }
+
 
     private List<Task<?>> keyTaskList = new ArrayList<>();
     private List<Task<?>> valueTaskList = new ArrayList<>();
@@ -339,8 +385,8 @@ public class MainController implements Initializable, AutoCloseable {
         keyTaskList.forEach(item -> item.cancel(false));
         keyTaskList.clear();
         RedisKeysTask task = new RedisKeysTask(serverProperty, database, CommonConstant.CHARSET_UTF8);
-        task.setOnScheduled(keyTaskScheduledEventHandler);
-        task.setOnSucceeded(keyTaskSuccessEventHandler);
+        task.setOnScheduled(keyTaskWorkerStateEventHandler);
+        task.setOnSucceeded(keyTaskWorkerStateEventHandler);
         executorService.execute(task);
         keyTaskList.add(task);
         return task;
@@ -358,8 +404,8 @@ public class MainController implements Initializable, AutoCloseable {
         valueTaskList.forEach(item -> item.cancel(false));
         valueTaskList.clear();
         RedisValueTask task = new RedisValueTask(serverProperty, database, key);
-        task.setOnScheduled(valueTaskScheduledEventHandler);
-        task.setOnSucceeded(valueTaskSuccessEventHandler);
+        task.setOnScheduled(valueTaskWorkerStateEventHandler);
+        task.setOnSucceeded(valueTaskWorkerStateEventHandler);
         executorService.execute(task);
         valueTaskList.add(task);
     }
@@ -400,9 +446,6 @@ public class MainController implements Initializable, AutoCloseable {
 
     private CreateRedisServerDialog connectionDialog() {
         RedisServerProperty property = new RedisServerProperty();
-        property.setHost("101.132.156.127");
-        property.setPort(6379);
-        property.setPassword("123!=-09][po");
         return CreateRedisServerDialog.newInstance(property);
     }
 
@@ -416,7 +459,7 @@ public class MainController implements Initializable, AutoCloseable {
 
         @Override
         public void exit(ActionEvent actionEvent) {
-
+            System.exit(0);
         }
 
         @Override
@@ -486,7 +529,8 @@ public class MainController implements Initializable, AutoCloseable {
                 return;
             }
             keyTableView.getItems().clear();
-            valueListView.getItems().clear();
+            valueTableView.getItems().clear();
+            updateKeyValueText(null, null);
             ObjectPool<StatefulRedisConnection<byte[], byte[]>> pool = CommonConstant.removeConnectionPool(serverProperty.getUuid());
             pool.close();
             serverItem.getChildren().clear();

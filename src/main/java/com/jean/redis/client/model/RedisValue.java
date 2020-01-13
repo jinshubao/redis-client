@@ -2,23 +2,33 @@ package com.jean.redis.client.model;
 
 import javafx.beans.property.*;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
-public abstract class RedisValue<V> {
+public class RedisValue {
 
+    private StringProperty uuid = new SimpleStringProperty(this, "uuid");
     private ObjectProperty<byte[]> key = new SimpleObjectProperty<>(this, "key");
     private StringProperty type = new SimpleStringProperty(this, "type");
     private LongProperty ttl = new SimpleLongProperty(this, "ttl");
     private LongProperty size = new SimpleLongProperty(this, "size");
-    private ObjectProperty<V> value = new SimpleObjectProperty<>(this, " value");
+    private List<ValueResult> value;
 
-    public RedisValue(byte[] key, String type, Long ttl, Long size, V value) {
+    public RedisValue(String uuid, byte[] key, String type, Long ttl, Long size, List<ValueResult> value) {
+        this.uuid.set(uuid);
         this.key.set(key);
         this.type.set(type);
         this.ttl.set(ttl);
         this.size.set(size);
-        this.value.set(value);
+        this.value = value;
+    }
+
+    public String getUuid() {
+        return uuid.get();
+    }
+
+
+    public void setUuid(String uuid) {
+        this.uuid.set(uuid);
     }
 
     public byte[] getKey() {
@@ -69,19 +79,11 @@ public abstract class RedisValue<V> {
         this.size.set(size);
     }
 
-    public V getValue() {
-        return value.get();
-    }
-
-    public ObjectProperty<V> valueProperty() {
+    public List<ValueResult> getValue() {
         return value;
     }
 
-    public void setValue(V value) {
-        this.value.set(value);
-    }
-
-    public Collection<byte[]> toList() {
-        return Collections.emptyList();
+    public void setValue(List<ValueResult> value) {
+        this.value = value;
     }
 }

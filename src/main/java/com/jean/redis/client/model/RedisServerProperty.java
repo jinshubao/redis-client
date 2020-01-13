@@ -9,7 +9,6 @@ import java.util.UUID;
 
 public class RedisServerProperty {
 
-
     private StringProperty host = new SimpleStringProperty(this, "host");
     private IntegerProperty port = new SimpleIntegerProperty(this, "port");
     private StringProperty password = new SimpleStringProperty(this, "password");

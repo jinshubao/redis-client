@@ -10,9 +10,19 @@ public abstract class ResourceLoader {
 
     public interface Image {
 
-        String redis_logo_24 = "/image/dbs_redis_24px.png";
+        String redis_logo_24 = "/image/redis_logo_24.png";
+        String redis_logo_32 = "/image/redis_logo_32.png";
 
-        String redis_logo_32 = "/image/dbs_redis_32px.png";
+        String add_16 = "/image/x16/add.png";
+        String delete_16 = "/image/x16/shanchu.png";
+        String refresh_16 = "/image/x16/xuexiao.png";
+        String connect_16 = "/image/x16/lianjie.png";
+        String disconnect_16 = "/image/x16/guanlianduankai.png";
+        String server_16 = "/image/x16/shujuku.png";
+
+        String save_32 = "/image/save-32.png";
+
+
     }
 
 
