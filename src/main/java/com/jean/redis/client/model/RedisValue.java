@@ -1,34 +1,27 @@
 package com.jean.redis.client.model;
 
-import javafx.beans.property.*;
-
-import java.util.List;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleObjectProperty;
 
 public class RedisValue {
 
-    private StringProperty uuid = new SimpleStringProperty(this, "uuid");
     private ObjectProperty<byte[]> key = new SimpleObjectProperty<>(this, "key");
-    private StringProperty type = new SimpleStringProperty(this, "type");
-    private LongProperty ttl = new SimpleLongProperty(this, "ttl");
-    private LongProperty size = new SimpleLongProperty(this, "size");
-    private List<ValueResult> value;
 
-    public RedisValue(String uuid, byte[] key, String type, Long ttl, Long size, List<ValueResult> value) {
-        this.uuid.set(uuid);
+    private ObjectProperty<byte[]> value = new SimpleObjectProperty<>(this, "value");
+
+    private DoubleProperty score = new SimpleDoubleProperty(this, "score");
+
+    public RedisValue(byte[] key, byte[] value) {
         this.key.set(key);
-        this.type.set(type);
-        this.ttl.set(ttl);
-        this.size.set(size);
-        this.value = value;
+        this.value.set(value);
     }
 
-    public String getUuid() {
-        return uuid.get();
-    }
-
-
-    public void setUuid(String uuid) {
-        this.uuid.set(uuid);
+    public RedisValue(byte[] key, byte[] value, double score) {
+        this.key.set(key);
+        this.value.set(value);
+        this.score.set(score);
     }
 
     public byte[] getKey() {
@@ -43,47 +36,27 @@ public class RedisValue {
         this.key.set(key);
     }
 
-    public String getType() {
-        return type.get();
+    public byte[] getValue() {
+        return value.get();
     }
 
-    public StringProperty typeProperty() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type.set(type);
-    }
-
-    public long getTtl() {
-        return ttl.get();
-    }
-
-    public LongProperty ttlProperty() {
-        return ttl;
-    }
-
-    public void setTtl(long ttl) {
-        this.ttl.set(ttl);
-    }
-
-    public long getSize() {
-        return size.get();
-    }
-
-    public LongProperty sizeProperty() {
-        return size;
-    }
-
-    public void setSize(long size) {
-        this.size.set(size);
-    }
-
-    public List<ValueResult> getValue() {
+    public ObjectProperty<byte[]> valueProperty() {
         return value;
     }
 
-    public void setValue(List<ValueResult> value) {
-        this.value = value;
+    public void setValue(byte[] value) {
+        this.value.set(value);
+    }
+
+    public double getScore() {
+        return score.get();
+    }
+
+    public DoubleProperty scoreProperty() {
+        return score;
+    }
+
+    public void setScore(double score) {
+        this.score.set(score);
     }
 }

@@ -15,7 +15,7 @@ import com.jean.redis.client.item.RedisServerItem;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisServerProperty;
 import com.jean.redis.client.model.RedisValue;
-import com.jean.redis.client.model.ValueResult;
+import com.jean.redis.client.model.RedisValueWrapper;
 import com.jean.redis.client.task.RedisConnectionPoolTask;
 import com.jean.redis.client.task.RedisKeysTask;
 import com.jean.redis.client.task.RedisServerInfoTask;
@@ -76,11 +76,15 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public TableColumn<RedisKey, Number> ttlColumn;
     @FXML
-    public TableView<ValueResult> valueTableView;
+    public TableView<RedisValue> valueTableView;
     @FXML
-    public TableColumn<ValueResult, byte[]> valueKeyColumn;
+    public TableColumn<Object, Object> valueNoColumn;
     @FXML
-    public TableColumn<ValueResult, byte[]> valueColumn;
+    public TableColumn<RedisValue, byte[]> valueKeyColumn;
+    @FXML
+    public TableColumn<RedisValue, byte[]> valueColumn;
+    @FXML
+    public TableColumn<RedisValue, Number> valueScoreColumn;
     @FXML
     public SplitPane valueSplitPane;
     @FXML
@@ -197,7 +201,7 @@ public class MainController implements Initializable, AutoCloseable {
                 valueProgressIndicator.indicatorVisibleProperty().unbind();
                 valueProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
             } else if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SUCCEEDED) {
-                RedisValue value = (RedisValue) event.getSource().getValue();
+                RedisValueWrapper value = (RedisValueWrapper) event.getSource().getValue();
                 if (value != null) {
                     if (CommonConstant.KeyType.STRING.equalsIgnoreCase(value.getType())) {
                         valueSplitPane.getItems().remove(valueTableView);
@@ -207,11 +211,12 @@ public class MainController implements Initializable, AutoCloseable {
                         }
                     }
                     valueKeyColumn.setVisible(CommonConstant.KeyType.HASH.equalsIgnoreCase(value.getType()));
+                    valueScoreColumn.setVisible(CommonConstant.KeyType.ZSET.equalsIgnoreCase(value.getType()));
                     if (CommonConstant.KeyType.STRING.equalsIgnoreCase(value.getType())) {
-                        updateKeyValueText(value.getKey(), value.getValue().get(0).getValue());
+                        updateKeyValueText(value.getKey(), value.getValues().get(0).getValue());
                     } else {
                         updateKeyValueText(null, null);
-                        valueTableView.getItems().addAll(value.getValue());
+                        valueTableView.getItems().addAll(value.getValues());
                     }
                 }
             }
@@ -303,10 +308,10 @@ public class MainController implements Initializable, AutoCloseable {
      */
     private void initializeValueListView() {
 
-        Callback<TableColumn<ValueResult, byte[]>, TableCell<ValueResult, byte[]>> cellCallback = new Callback<TableColumn<ValueResult, byte[]>, TableCell<ValueResult, byte[]>>() {
+        Callback<TableColumn<RedisValue, byte[]>, TableCell<RedisValue, byte[]>> cellCallback = new Callback<TableColumn<RedisValue, byte[]>, TableCell<RedisValue, byte[]>>() {
             @Override
-            public TableCell<ValueResult, byte[]> call(TableColumn<ValueResult, byte[]> param) {
-                return new TableCell<ValueResult, byte[]>() {
+            public TableCell<RedisValue, byte[]> call(TableColumn<RedisValue, byte[]> param) {
+                return new TableCell<RedisValue, byte[]>() {
                     @Override
                     protected void updateItem(byte[] item, boolean empty) {
                         super.updateItem(item, empty);
@@ -321,6 +326,10 @@ public class MainController implements Initializable, AutoCloseable {
         };
 
         valueTextArea.setWrapText(true);
+
+        valueNoColumn.setCellFactory(tableIndexColumnCellFactory);
+
+        valueScoreColumn.setCellValueFactory(param -> param.getValue().scoreProperty());
 
         valueKeyColumn.setCellFactory(cellCallback);
         valueKeyColumn.setCellValueFactory(param -> param.getValue().keyProperty());
