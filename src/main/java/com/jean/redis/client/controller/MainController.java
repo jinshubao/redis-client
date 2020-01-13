@@ -4,10 +4,10 @@ import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.ctrl.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
 import com.jean.redis.client.dialog.RedisServerInfoDialog;
-import com.jean.redis.client.factory.RedisKeyTableKeyColumnCellFactory;
 import com.jean.redis.client.factory.RedisKeyTableRowFactory;
 import com.jean.redis.client.factory.RedisTreeCellFactory;
-import com.jean.redis.client.factory.TableIndexColumnCellFactory;
+import com.jean.redis.client.factory.TableViewByteColumnCellFactory;
+import com.jean.redis.client.factory.TableViewIndexColumnCellFactory;
 import com.jean.redis.client.handler.*;
 import com.jean.redis.client.item.RedisDatabaseItem;
 import com.jean.redis.client.item.RedisRootItem;
@@ -39,7 +39,6 @@ import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.MouseEvent;
-import javafx.util.Callback;
 import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +65,7 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public TableView<RedisKey> keyTableView;
     @FXML
-    public TableColumn<Object, Object> keyNoColumn;
+    public TableColumn<RedisKey, Integer> keyNoColumn;
     @FXML
     public TableColumn<RedisKey, byte[]> keyColumn;
     @FXML
@@ -78,7 +77,7 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public TableView<RedisValue> valueTableView;
     @FXML
-    public TableColumn<Object, Object> valueNoColumn;
+    public TableColumn<RedisValue, Integer> valueNoColumn;
     @FXML
     public TableColumn<RedisValue, byte[]> valueKeyColumn;
     @FXML
@@ -108,8 +107,8 @@ public class MainController implements Initializable, AutoCloseable {
 
     private RedisTreeCellFactory redisTreeCellFactory;
     private RedisKeyTableRowFactory redisKeyTableRowFactory;
-    private RedisKeyTableKeyColumnCellFactory redisKeyTableKeyColumnCellFactory;
-    private TableIndexColumnCellFactory tableIndexColumnCellFactory;
+    private TableViewByteColumnCellFactory tableViewByteColumnCellFactory;
+    private TableViewIndexColumnCellFactory tableViewIndexColumnCellFactory;
 
     private ProgressIndicatorPlaceholder keyProgressIndicator;
     private ProgressIndicatorPlaceholder valueProgressIndicator;
@@ -167,8 +166,8 @@ public class MainController implements Initializable, AutoCloseable {
     private void initializeFactory() {
         this.redisTreeCellFactory = new RedisTreeCellFactory();
         this.redisKeyTableRowFactory = new RedisKeyTableRowFactory(redisKeyActionEventHandler);
-        this.redisKeyTableKeyColumnCellFactory = new RedisKeyTableKeyColumnCellFactory(CommonConstant.CHARSET_UTF8);
-        tableIndexColumnCellFactory = new TableIndexColumnCellFactory();
+        this.tableViewByteColumnCellFactory = new TableViewByteColumnCellFactory(CommonConstant.CHARSET_UTF8);
+        tableViewIndexColumnCellFactory = new TableViewIndexColumnCellFactory();
     }
 
 
@@ -287,8 +286,8 @@ public class MainController implements Initializable, AutoCloseable {
      * 初始化 redis key 表格
      */
     private void initializeKeyTableView() {
-        keyNoColumn.setCellFactory(tableIndexColumnCellFactory);
-        keyColumn.setCellFactory(redisKeyTableKeyColumnCellFactory);
+        keyNoColumn.setCellFactory(tableViewIndexColumnCellFactory);
+        keyColumn.setCellFactory(tableViewByteColumnCellFactory);
         keyColumn.setCellValueFactory(param -> param.getValue().keyProperty());
         typeColumn.setCellValueFactory(param -> param.getValue().typeProperty());
         sizeColumn.setCellValueFactory(param -> param.getValue().sizeProperty());
@@ -307,38 +306,14 @@ public class MainController implements Initializable, AutoCloseable {
      * 初始化 redis value 列表
      */
     private void initializeValueListView() {
-
-        Callback<TableColumn<RedisValue, byte[]>, TableCell<RedisValue, byte[]>> cellCallback = new Callback<TableColumn<RedisValue, byte[]>, TableCell<RedisValue, byte[]>>() {
-            @Override
-            public TableCell<RedisValue, byte[]> call(TableColumn<RedisValue, byte[]> param) {
-                return new TableCell<RedisValue, byte[]>() {
-                    @Override
-                    protected void updateItem(byte[] item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || item == null) {
-                            setText(null);
-                        } else {
-                            setText(new String(item, CommonConstant.CHARSET_UTF8));
-                        }
-                    }
-                };
-            }
-        };
-
         valueTextArea.setWrapText(true);
-
-        valueNoColumn.setCellFactory(tableIndexColumnCellFactory);
-
+        valueNoColumn.setCellFactory(tableViewIndexColumnCellFactory);
         valueScoreColumn.setCellValueFactory(param -> param.getValue().scoreProperty());
-
-        valueKeyColumn.setCellFactory(cellCallback);
+        valueKeyColumn.setCellFactory(tableViewByteColumnCellFactory);
         valueKeyColumn.setCellValueFactory(param -> param.getValue().keyProperty());
-
-        valueColumn.setCellFactory(cellCallback);
+        valueColumn.setCellFactory(tableViewByteColumnCellFactory);
         valueColumn.setCellValueFactory(param -> param.getValue().valueProperty());
-
         valueTableView.setPlaceholder(valueProgressIndicator);
-
         valueTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 updateKeyValueText(newValue.getKey(), newValue.getValue());

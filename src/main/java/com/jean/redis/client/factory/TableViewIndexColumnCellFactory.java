@@ -4,13 +4,13 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 
-public class TableIndexColumnCellFactory implements Callback<TableColumn<Object, Object>, TableCell<Object, Object>> {
+public class TableViewIndexColumnCellFactory<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
     @Override
-    public TableCell<Object, Object> call(TableColumn<Object, Object> param) {
-        return new TableCell<Object, Object>() {
+    public TableCell<S, T> call(TableColumn<S, T> param) {
+        return new TableCell<S, T>() {
             @Override
-            protected void updateItem(Object item, boolean empty) {
+            protected void updateItem(T item, boolean empty) {
                 super.updateItem(item, empty);
                 if (!isEmpty()) {
                     setText(String.valueOf(getTableRow().getIndex() + 1));
