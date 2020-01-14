@@ -1,5 +1,8 @@
 package com.jean.redis.client.util;
 
+import com.jean.redis.client.constant.CommonConstant;
+
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -45,5 +48,13 @@ public abstract class StringUtils {
             }
         }
         return builder.toString();
+    }
+
+    public static String byteArrayToString(byte[] bytes) {
+        return new String(bytes, CommonConstant.CHARSET_UTF8);
+    }
+
+    public static String byteArrayToString(byte[] bytes, Charset charset) {
+        return new String(bytes, charset);
     }
 }

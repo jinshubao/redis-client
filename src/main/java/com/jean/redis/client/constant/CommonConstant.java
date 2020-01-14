@@ -20,6 +20,10 @@ public class CommonConstant {
 
     public static final int THREAD_POOL_SIZE = 10;
 
+    public static final long KEY_SCAN_SIZE = 100;
+
+    public static final long VALUE_SCAN_SIZE = 100;
+
     public static final Map<String, RedisClient> GLOBAL_REDIS_CLIENT_CACHE = new ConcurrentHashMap<>();
 
     public static final Map<String, ObjectPool<StatefulRedisConnection<byte[], byte[]>>> GLOBAL_REDIS_CONNECTION_POOL_CACHE = new HashMap<>();

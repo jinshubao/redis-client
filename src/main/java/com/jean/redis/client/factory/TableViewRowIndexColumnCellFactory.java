@@ -4,7 +4,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
 
-public class TableViewIndexColumnCellFactory<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+public class TableViewRowIndexColumnCellFactory<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
     @Override
     public TableCell<S, T> call(TableColumn<S, T> param) {

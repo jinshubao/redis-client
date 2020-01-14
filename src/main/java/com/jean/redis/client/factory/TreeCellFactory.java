@@ -14,7 +14,7 @@ import javafx.util.Callback;
 /**
  * Created by jinshubao on 2016/11/25.
  */
-public class RedisTreeCellFactory implements Callback<TreeView<Object>, TreeCell<Object>> {
+public class TreeCellFactory implements Callback<TreeView<Object>, TreeCell<Object>> {
 
     @Override
     public TreeCell<Object> call(TreeView<Object> param) {
@@ -23,7 +23,7 @@ public class RedisTreeCellFactory implements Callback<TreeView<Object>, TreeCell
 
     static class RedisServerTreeCell extends TreeCell<Object> {
 
-        public RedisServerTreeCell() {
+        RedisServerTreeCell() {
             setOnMouseClicked(event -> {
                 TreeItem<Object> treeItem = getTreeItem();
                 if (treeItem instanceof MouseClickable) {

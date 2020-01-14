@@ -2,11 +2,13 @@ package com.jean.redis.client.task;
 
 import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.model.RedisServerProperty;
-import com.jean.redis.client.model.RedisValueWrapper;
 import com.jean.redis.client.model.RedisValue;
+import com.jean.redis.client.model.RedisValueWrapper;
 import io.lettuce.core.*;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,14 +16,13 @@ import java.util.stream.Collectors;
 
 public class RedisValueTask extends BaseTask<RedisValueWrapper> {
 
-    private static final long VALUE_SCAN_SIZE = 100;
-
     private final int database;
 
     private final byte[] key;
 
-    public RedisValueTask(RedisServerProperty serverProperty, int database, byte[] key) {
-        super(serverProperty);
+
+    public RedisValueTask(RedisServerProperty serverProperty, int database, byte[] key, EventHandler<WorkerStateEvent> eventHandler) {
+        super(serverProperty, eventHandler);
         this.database = database;
         this.key = key;
     }
@@ -70,7 +71,7 @@ public class RedisValueTask extends BaseTask<RedisValueWrapper> {
         Long ttl = commands.ttl(key);
         List<RedisValue> value = new ArrayList<>();
         if (size > 0) {
-            ScanArgs scanArgs = ScanArgs.Builder.limit(VALUE_SCAN_SIZE);
+            ScanArgs scanArgs = ScanArgs.Builder.limit(CommonConstant.VALUE_SCAN_SIZE);
             ScanCursor scanCursor = ScanCursor.INITIAL;
             do {
                 MapScanCursor<byte[], byte[]> cursor = commands.hscan(key, scanCursor, scanArgs);
@@ -92,7 +93,7 @@ public class RedisValueTask extends BaseTask<RedisValueWrapper> {
     private RedisValueWrapper getListValue(RedisCommands<byte[], byte[]> commands) {
         Long size = commands.llen(key);
         Long ttl = commands.ttl(key);
-        long scanSize = VALUE_SCAN_SIZE;
+        long scanSize = CommonConstant.VALUE_SCAN_SIZE;
         if (size <= scanSize) {
             List<RedisValue> value = commands.lrange(key, 0, -1).stream().map(item -> new RedisValue(null, item)).collect(Collectors.toList());
             return new RedisValueWrapper(serverProperty.getUuid(), key, CommonConstant.KeyType.LIST, ttl, size, value);
@@ -113,12 +114,13 @@ public class RedisValueTask extends BaseTask<RedisValueWrapper> {
     }
 
 
+    @SuppressWarnings("Duplicates")
     private RedisValueWrapper getScoredSetValue(RedisCommands<byte[], byte[]> commands) {
         Long size = commands.llen(key);
         Long ttl = commands.ttl(key);
         List<RedisValue> value = new ArrayList<>();
         if (size > 0) {
-            ScanArgs scanArgs = ScanArgs.Builder.limit(VALUE_SCAN_SIZE);
+            ScanArgs scanArgs = ScanArgs.Builder.limit(CommonConstant.VALUE_SCAN_SIZE);
             ScanCursor scanCursor = ScanCursor.INITIAL;
             do {
                 ScoredValueScanCursor<byte[]> cursor = commands.zscan(key, scanCursor, scanArgs);
@@ -135,13 +137,13 @@ public class RedisValueTask extends BaseTask<RedisValueWrapper> {
         return new RedisValueWrapper(serverProperty.getUuid(), key, CommonConstant.KeyType.ZSET, ttl, size, value);
     }
 
-
+    @SuppressWarnings("Duplicates")
     private RedisValueWrapper getSetValue(RedisCommands<byte[], byte[]> commands) {
         Long size = commands.scard(key);
         Long ttl = commands.ttl(key);
         List<RedisValue> value = new ArrayList<>();
         if (size > 0) {
-            ScanArgs scanArgs = ScanArgs.Builder.limit(VALUE_SCAN_SIZE);
+            ScanArgs scanArgs = ScanArgs.Builder.limit(CommonConstant.VALUE_SCAN_SIZE);
             ScanCursor scanCursor = ScanCursor.INITIAL;
             do {
                 ValueScanCursor<byte[]> cursor = commands.sscan(key, scanCursor, scanArgs);
@@ -158,4 +160,9 @@ public class RedisValueTask extends BaseTask<RedisValueWrapper> {
         return new RedisValueWrapper(serverProperty.getUuid(), key, CommonConstant.KeyType.SET, ttl, size, value);
     }
 
+
+    @Override
+    public String toString() {
+        return "getValue-task-" + super.toString();
+    }
 }

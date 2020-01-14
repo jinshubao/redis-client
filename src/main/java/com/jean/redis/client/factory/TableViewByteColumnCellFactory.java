@@ -1,11 +1,10 @@
 package com.jean.redis.client.factory;
 
 
+import com.jean.redis.client.util.StringUtils;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.util.Callback;
-
-import java.nio.charset.Charset;
 
 /**
  * @author jinshubao
@@ -13,23 +12,12 @@ import java.nio.charset.Charset;
  */
 public class TableViewByteColumnCellFactory<T> implements Callback<TableColumn<T, byte[]>, TableCell<?, byte[]>> {
 
-    private final Charset charset;
-
-    public TableViewByteColumnCellFactory(Charset charset) {
-        this.charset = charset;
-    }
-
     @Override
     public TableCell<T, byte[]> call(TableColumn<T, byte[]> p) {
-        return new KeyTableCell<>(charset);
+        return new KeyTableCell<>();
     }
 
     private static class KeyTableCell<T> extends TableCell<T, byte[]> {
-        private final Charset charset;
-
-        private KeyTableCell(Charset charset) {
-            this.charset = charset;
-        }
 
         @Override
         protected void updateItem(byte[] item, boolean empty) {
@@ -38,7 +26,7 @@ public class TableViewByteColumnCellFactory<T> implements Callback<TableColumn<T
                 setText(null);
                 setGraphic(null);
             } else {
-                setText(new String(item, charset));
+                setText(StringUtils.byteArrayToString(item));
             }
         }
     }

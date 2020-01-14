@@ -9,7 +9,7 @@ public class RedisValue {
 
     private ObjectProperty<byte[]> key = new SimpleObjectProperty<>(this, "key");
 
-    private ObjectProperty<byte[]> value = new SimpleObjectProperty<>(this, "value");
+    private ObjectProperty<byte[]> value = new SimpleObjectProperty<>(this, "getValue");
 
     private DoubleProperty score = new SimpleDoubleProperty(this, "score");
 

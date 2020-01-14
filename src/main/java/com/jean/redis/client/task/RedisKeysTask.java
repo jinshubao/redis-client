@@ -1,14 +1,17 @@
 package com.jean.redis.client.task;
 
+import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.util.StringUtils;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.ScanArgs;
 import io.lettuce.core.ScanCursor;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -16,16 +19,11 @@ import java.util.stream.Collectors;
 
 public class RedisKeysTask extends BaseTask<List<RedisKey>> {
 
-    private static final long KEY_SCAN_SIZE = 100;
-
     private final int database;
 
-    private final Charset charset;
-
-    public RedisKeysTask(RedisServerProperty serverProperty, int database, Charset charset) {
-        super(serverProperty);
+    public RedisKeysTask(RedisServerProperty serverProperty, int database, EventHandler<WorkerStateEvent> eventHandler) {
+        super(serverProperty, eventHandler);
         this.database = database;
-        this.charset = charset;
     }
 
     @Override
@@ -36,7 +34,7 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
             Long size = commands.dbsize();
             ScanCursor scanCursor = ScanCursor.INITIAL;
             List<RedisKey> value = new ArrayList<>();
-            ScanArgs limit = ScanArgs.Builder.limit(KEY_SCAN_SIZE);
+            ScanArgs limit = ScanArgs.Builder.limit(CommonConstant.KEY_SCAN_SIZE);
             do {
                 KeyScanCursor<byte[]> cursor = commands.scan(scanCursor, limit);
                 scanCursor = ScanCursor.of(cursor.getCursor());
@@ -47,10 +45,6 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
                     redisKey.setServer(serverProperty);
                     redisKey.setDatabase(database);
                     redisKey.setKey(key);
-//                    Long ttl = commands.ttl(key);
-//                    redisKey.setTtl(ttl);
-//                    String type = commands.type(key);
-//                    redisKey.setType(type);
                     return redisKey;
                 }).collect(Collectors.toList());
                 value.addAll(collect);
@@ -59,8 +53,13 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
                     break;
                 }
             } while (!scanCursor.isFinished());
-            value.sort(Comparator.comparing(o -> new String(o.getKey(), charset)));
+            value.sort(Comparator.comparing(o -> StringUtils.byteArrayToString(o.getKey())));
             return value;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "getKeys-task-" + super.toString();
     }
 }
