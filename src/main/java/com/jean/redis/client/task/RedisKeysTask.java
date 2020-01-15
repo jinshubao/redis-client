@@ -21,9 +21,19 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
 
     private final int database;
 
+    private boolean typeAction;
+    private boolean ttlAction;
+
     public RedisKeysTask(RedisServerProperty serverProperty, int database, EventHandler<WorkerStateEvent> eventHandler) {
+        this(serverProperty, database, eventHandler, false, false);
+    }
+
+    public RedisKeysTask(RedisServerProperty serverProperty, int database, EventHandler<WorkerStateEvent> eventHandler,
+                         boolean typeAction, boolean ttlAction) {
         super(serverProperty, eventHandler);
         this.database = database;
+        this.typeAction = typeAction;
+        this.ttlAction = ttlAction;
     }
 
     @Override
@@ -41,7 +51,16 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
                 scanCursor.setFinished(cursor.isFinished());
                 List<byte[]> keys = cursor.getKeys();
                 List<RedisKey> collect = keys.stream().map(key -> {
+
                     RedisKey redisKey = new RedisKey();
+                    if (typeAction) {
+                        String type = commands.type(key);
+                        redisKey.setType(type);
+                    }
+                    if (ttlAction) {
+                        Long ttl = commands.ttl(key);
+                        redisKey.setTtl(ttl);
+                    }
                     redisKey.setServer(serverProperty);
                     redisKey.setDatabase(database);
                     redisKey.setKey(key);

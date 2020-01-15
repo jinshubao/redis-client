@@ -360,7 +360,6 @@ public class MainController implements Initializable, AutoCloseable {
         }
         if (value != null) {
             valueTextArea.setText(StringUtils.byteArrayToString(value));
-
         } else {
             valueTextArea.setText(null);
         }
@@ -373,9 +372,8 @@ public class MainController implements Initializable, AutoCloseable {
      * @param database       database
      * @return 返回任务
      */
-    @SuppressWarnings("Duplicates")
     private RedisKeysTask startRefreshKeyTask(RedisServerProperty serverProperty, int database) {
-        RedisKeysTask task = new RedisKeysTask(serverProperty, database, keyTaskWorkerStateEventHandler);
+        RedisKeysTask task = new RedisKeysTask(serverProperty, database, keyTaskWorkerStateEventHandler, typeColumn.isVisible(), ttlColumn.isVisible());
         executorService.execute(task);
         return task;
     }
@@ -387,7 +385,6 @@ public class MainController implements Initializable, AutoCloseable {
      * @param database       database
      * @param key            key
      */
-    @SuppressWarnings("Duplicates")
     private void startRefreshValueTask(RedisServerProperty serverProperty, int database, byte[] key) {
         RedisValueTask task = new RedisValueTask(serverProperty, database, key, valueTaskWorkerStateEventHandler);
         executorService.execute(task);
@@ -406,23 +403,6 @@ public class MainController implements Initializable, AutoCloseable {
         RedisServerProperty property = new RedisServerProperty();
         return CreateRedisServerDialog.newInstance(property);
     }
-
-    private void connectServer(RedisServerItem treeItem, RedisServerProperty serverProperty) {
-        RedisConnectionPoolTask task = new RedisConnectionPoolTask(serverProperty, event -> {
-            if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SUCCEEDED) {
-                RedisPoolWrapper poolWrapper = (RedisPoolWrapper) event.getSource().getValue();
-                CommonConstant.putConnectionPool(serverProperty.getUuid(), poolWrapper.getPool());
-                for (int i = 0; i < poolWrapper.getDbNum(); i++) {
-                    RedisDatabaseItem item = new RedisDatabaseItem(serverProperty, i, redisDatabaseItemActionEventHandler);
-                    treeItem.getChildren().add(item);
-                }
-                treeItem.setOpen(true);
-                treeItem.setExpanded(true);
-            }
-        });
-        executorService.execute(task);
-    }
-
 
     private class MenuBarActionEventHandlerImpl implements MenuBarActionEventHandler {
 
@@ -471,10 +451,9 @@ public class MainController implements Initializable, AutoCloseable {
 
         @Override
         public void open(ActionEvent actionEvent, RedisServerItem treeItem, RedisServerProperty serverProperty) {
-            if (treeItem.isOpen()) {
-                return;
+            if (!treeItem.isOpen()) {
+                connectServer(treeItem, serverProperty);
             }
-            connectServer(treeItem, serverProperty);
         }
 
         @Override
@@ -494,19 +473,35 @@ public class MainController implements Initializable, AutoCloseable {
             executorService.execute(task);
         }
 
+        private void connectServer(RedisServerItem treeItem, RedisServerProperty serverProperty) {
+            RedisConnectionPoolTask task = new RedisConnectionPoolTask(serverProperty, event -> {
+                if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SUCCEEDED) {
+                    RedisPoolWrapper poolWrapper = (RedisPoolWrapper) event.getSource().getValue();
+                    CommonConstant.putConnectionPool(serverProperty.getUuid(), poolWrapper.getPool());
+                    for (int i = 0; i < poolWrapper.getDbNum(); i++) {
+                        RedisDatabaseItem item = new RedisDatabaseItem(serverProperty, i, redisDatabaseItemActionEventHandler);
+                        treeItem.getChildren().add(item);
+                    }
+                    treeItem.setOpen(true);
+                    treeItem.setExpanded(true);
+                }
+            });
+            executorService.execute(task);
+        }
 
         private void disconnectServer(RedisServerItem serverItem, RedisServerProperty serverProperty) {
-            if (!serverItem.isOpen()) {
-                return;
+            if (serverItem.isOpen()) {
+                ObjectPool<StatefulRedisConnection<byte[], byte[]>> pool = CommonConstant.removeConnectionPool(serverProperty.getUuid());
+                if (pool != null) {
+                    pool.close();
+                    serverItem.getChildren().clear();
+                    serverItem.setExpanded(false);
+                    serverItem.setOpen(false);
+                    keyTableView.getItems().clear();
+                    valueTableView.getItems().clear();
+                    updateKeyValueText(null, null);
+                }
             }
-            keyTableView.getItems().clear();
-            valueTableView.getItems().clear();
-            updateKeyValueText(null, null);
-            ObjectPool<StatefulRedisConnection<byte[], byte[]>> pool = CommonConstant.removeConnectionPool(serverProperty.getUuid());
-            pool.close();
-            serverItem.getChildren().clear();
-            serverItem.setExpanded(false);
-            serverItem.setOpen(false);
         }
     }
 
