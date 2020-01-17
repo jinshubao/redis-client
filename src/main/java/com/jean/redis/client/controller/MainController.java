@@ -4,19 +4,21 @@ import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.ctrl.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
 import com.jean.redis.client.dialog.RedisServerInfoDialog;
-import com.jean.redis.client.factory.RedisKeyTableRowFactory;
 import com.jean.redis.client.factory.TableViewByteColumnCellFactory;
 import com.jean.redis.client.factory.TableViewRowIndexColumnCellFactory;
-import com.jean.redis.client.factory.TreeCellFactory;
+import com.jean.redis.client.factory.key.RedisKeyTableRowFactory;
+import com.jean.redis.client.factory.server.TreeCellFactory;
 import com.jean.redis.client.handler.*;
 import com.jean.redis.client.item.RedisDatabaseItem;
 import com.jean.redis.client.item.RedisRootItem;
 import com.jean.redis.client.item.RedisServerItem;
+import com.jean.redis.client.mange.TaskManger;
 import com.jean.redis.client.model.*;
 import com.jean.redis.client.task.RedisConnectionPoolTask;
 import com.jean.redis.client.task.RedisKeysTask;
 import com.jean.redis.client.task.RedisServerInfoTask;
 import com.jean.redis.client.task.RedisValueTask;
+import com.jean.redis.client.util.MessageUtils;
 import com.jean.redis.client.util.MouseEventUtils;
 import com.jean.redis.client.util.StringUtils;
 import io.lettuce.core.AbstractRedisClient;
@@ -27,6 +29,8 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -45,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
 
 /**
  * @author jinshubao
@@ -103,8 +106,6 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     public MenuItem aboutMenuItem;
 
-    private final ExecutorService executorService;
-
     private TreeCellFactory treeCellFactory;
     private RedisKeyTableRowFactory redisKeyTableRowFactory;
     private TableViewByteColumnCellFactory tableViewByteColumnCellFactory;
@@ -128,8 +129,7 @@ public class MainController implements Initializable, AutoCloseable {
     private StringProperty server = new SimpleStringProperty(this, "server");
     private ObjectProperty<Integer> database = new SimpleObjectProperty<>(this, "database");
 
-    public MainController(ExecutorService executorService) {
-        this.executorService = executorService;
+    public MainController() {
         logger.debug("main controller constructed...");
     }
 
@@ -158,9 +158,8 @@ public class MainController implements Initializable, AutoCloseable {
         logger.debug("main controller destroy...");
         CommonConstant.GLOBAL_REDIS_CONNECTION_POOL_CACHE.values().forEach(ObjectPool::close);
         CommonConstant.GLOBAL_REDIS_CLIENT_CACHE.values().forEach(AbstractRedisClient::shutdownAsync);
-        executorService.shutdown();
+        TaskManger.getInstance().shutdown();
     }
-
 
     /**
      * 初始化事件处理器
@@ -269,27 +268,7 @@ public class MainController implements Initializable, AutoCloseable {
         serverTreeView.setRoot(rootItem);
 
         //切换数据库
-        serverTreeView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                if (newValue instanceof RedisServerItem) {
-                    this.server.set(newValue.getValue().toString());
-                    this.database.set(null);
-                } else if (newValue instanceof RedisDatabaseItem) {
-                    RedisDatabaseItem value = (RedisDatabaseItem) newValue;
-                    RedisServerProperty serverProperty = value.getServerProperty();
-                    int database = value.getDatabase();
-                    this.server.set(serverProperty.toString());
-                    this.database.set(database);
-                    startRefreshKeyTask(serverProperty, database);
-                } else {
-                    server.set(null);
-                    database.set(null);
-                }
-            } else {
-                server.set(null);
-                database.set(null);
-            }
-        });
+        serverTreeView.getSelectionModel().selectedItemProperty().addListener(new DatabaseChangeListener());
     }
 
     /**
@@ -305,11 +284,7 @@ public class MainController implements Initializable, AutoCloseable {
         keyProgressIndicator = new ProgressIndicatorPlaceholder();
         keyTableView.setPlaceholder(keyProgressIndicator);
         keyTableView.setRowFactory(redisKeyTableRowFactory);
-        keyTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, redisKey) -> {
-            if (redisKey != null) {
-                startRefreshValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
-            }
-        });
+        keyTableView.getSelectionModel().selectedItemProperty().addListener(new RedisKeyChangeListener());
 
     }
 
@@ -326,13 +301,8 @@ public class MainController implements Initializable, AutoCloseable {
         valueColumn.setCellValueFactory(param -> param.getValue().valueProperty());
         valueProgressIndicator = new ProgressIndicatorPlaceholder();
         valueTableView.setPlaceholder(valueProgressIndicator);
-        valueTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                updateKeyValueText(newValue.getKey(), newValue.getValue());
-            } else {
-                updateKeyValueText(null, null);
-            }
-        });
+        valueTableView.getSelectionModel().selectedItemProperty().addListener(new RedisValueChangeListener());
+
     }
 
     private void initializeTaskBar() {
@@ -350,6 +320,7 @@ public class MainController implements Initializable, AutoCloseable {
             }
         }, server, database);
         serverInfoLabel.textProperty().bind(stringBinding);
+        MessageUtils.init(messageLabel);
     }
 
     private void updateKeyValueText(byte[] key, byte[] value) {
@@ -365,31 +336,6 @@ public class MainController implements Initializable, AutoCloseable {
         }
     }
 
-    /**
-     * 启动获取 redis key 的后台任务
-     *
-     * @param serverProperty server
-     * @param database       database
-     * @return 返回任务
-     */
-    private RedisKeysTask startRefreshKeyTask(RedisServerProperty serverProperty, int database) {
-        RedisKeysTask task = new RedisKeysTask(serverProperty, database, keyTaskWorkerStateEventHandler, typeColumn.isVisible(), ttlColumn.isVisible());
-        executorService.execute(task);
-        return task;
-    }
-
-    /**
-     * 启动获取 redis getValue 的后台任务
-     *
-     * @param serverProperty server
-     * @param database       database
-     * @param key            key
-     */
-    private void startRefreshValueTask(RedisServerProperty serverProperty, int database, byte[] key) {
-        RedisValueTask task = new RedisValueTask(serverProperty, database, key, valueTaskWorkerStateEventHandler);
-        executorService.execute(task);
-    }
-
 
     private void addNewServer() {
         connectionDialog().showAndWait().ifPresent(property -> {
@@ -402,6 +348,57 @@ public class MainController implements Initializable, AutoCloseable {
     private CreateRedisServerDialog connectionDialog() {
         RedisServerProperty property = new RedisServerProperty();
         return CreateRedisServerDialog.newInstance(property);
+    }
+
+    private class DatabaseChangeListener implements ChangeListener {
+
+        @Override
+        public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+            if (newValue != null) {
+                if (newValue instanceof RedisServerItem) {
+                    RedisServerItem item = (RedisServerItem) newValue;
+                    server.set(item.getValue().toString());
+                    database.set(null);
+                } else if (newValue instanceof RedisDatabaseItem) {
+                    RedisDatabaseItem value = (RedisDatabaseItem) newValue;
+                    RedisServerProperty serverProperty = value.getServerProperty();
+                    int db = value.getDatabase();
+                    server.set(serverProperty.toString());
+                    database.set(db);
+                    RedisKeysTask task = new RedisKeysTask(serverProperty, db, typeColumn.isVisible(), ttlColumn.isVisible());
+                    TaskManger.getInstance().execute(task, keyTaskWorkerStateEventHandler);
+                } else {
+                    server.set(null);
+                    database.set(null);
+                }
+            } else {
+                server.set(null);
+                database.set(null);
+            }
+        }
+    }
+
+    private class RedisKeyChangeListener implements ChangeListener<RedisKey> {
+
+        @Override
+        public void changed(ObservableValue<? extends RedisKey> observable, RedisKey oldValue, RedisKey newValue) {
+            if (newValue != null) {
+                RedisValueTask task = new RedisValueTask(newValue.getServer(), newValue.getDatabase(), newValue.getKey());
+                TaskManger.getInstance().execute(task, valueTaskWorkerStateEventHandler);
+            }
+        }
+    }
+
+    private class RedisValueChangeListener implements ChangeListener<RedisValue> {
+
+        @Override
+        public void changed(ObservableValue<? extends RedisValue> observable, RedisValue oldValue, RedisValue newValue) {
+            if (newValue != null) {
+                updateKeyValueText(newValue.getKey(), newValue.getValue());
+            } else {
+                updateKeyValueText(null, null);
+            }
+        }
     }
 
     private class MenuBarActionEventHandlerImpl implements MenuBarActionEventHandler {
@@ -426,7 +423,6 @@ public class MainController implements Initializable, AutoCloseable {
         }
     }
 
-
     private class RedisRootItemActionEventHandlerImpl implements RedisRootItemActionEventHandler {
 
         @Override
@@ -441,6 +437,7 @@ public class MainController implements Initializable, AutoCloseable {
     }
 
     private class RedisServerItemActionEventHandlerImpl implements RedisServerItemActionEventHandler {
+
 
         @Override
         public void click(MouseEvent mouseEvent, RedisServerItem treeItem, RedisServerProperty serverProperty) {
@@ -469,12 +466,12 @@ public class MainController implements Initializable, AutoCloseable {
 
         @Override
         public void property(ActionEvent event, RedisServerItem treeItem, RedisServerProperty serverProperty) {
-            RedisServerInfoTask task = new RedisServerInfoTask(serverProperty, serverInfoWorkerStateEventHandler);
-            executorService.execute(task);
+            RedisServerInfoTask task = new RedisServerInfoTask(serverProperty);
+            TaskManger.getInstance().execute(task, serverInfoWorkerStateEventHandler);
         }
 
         private void connectServer(RedisServerItem treeItem, RedisServerProperty serverProperty) {
-            RedisConnectionPoolTask task = new RedisConnectionPoolTask(serverProperty, event -> {
+            EventHandler<WorkerStateEvent> eventHandler = event -> {
                 if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SUCCEEDED) {
                     RedisPoolWrapper poolWrapper = (RedisPoolWrapper) event.getSource().getValue();
                     CommonConstant.putConnectionPool(serverProperty.getUuid(), poolWrapper.getPool());
@@ -485,8 +482,9 @@ public class MainController implements Initializable, AutoCloseable {
                     treeItem.setOpen(true);
                     treeItem.setExpanded(true);
                 }
-            });
-            executorService.execute(task);
+            };
+            RedisConnectionPoolTask task = new RedisConnectionPoolTask(serverProperty);
+            TaskManger.getInstance().execute(task, eventHandler);
         }
 
         private void disconnectServer(RedisServerItem serverItem, RedisServerProperty serverProperty) {
@@ -505,27 +503,28 @@ public class MainController implements Initializable, AutoCloseable {
         }
     }
 
-
     private class RedisDatabaseItemActionEventHandlerImpl implements RedisDatabaseItemActionEventHandler {
 
         @Override
         public void click(MouseEvent mouseEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database) {
             if (MouseEventUtils.isDoubleClick(mouseEvent)) {
-                startRefreshKeyTask(serverProperty, database);
+                refreshKey(serverProperty, database);
             }
         }
 
         @Override
         public void refresh(ActionEvent actionEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database) {
-            RedisKeysTask task = startRefreshKeyTask(serverProperty, database);
-            MenuItem menuItem = (MenuItem) actionEvent.getSource();
-            menuItem.disableProperty().unbind();
-            menuItem.disableProperty().bind(task.runningProperty());
+            refreshKey(serverProperty, database);
         }
 
         @Override
         public void flush(ActionEvent actionEvent, TreeItem<?> treeItem, RedisServerProperty serverProperty, int database) {
-            this.refresh(actionEvent, treeItem, serverProperty, database);
+            refreshKey(serverProperty, database);
+        }
+
+        private void refreshKey(RedisServerProperty serverProperty, int database) {
+            RedisKeysTask task = new RedisKeysTask(serverProperty, database, typeColumn.isVisible(), ttlColumn.isVisible());
+            TaskManger.getInstance().execute(task, keyTaskWorkerStateEventHandler);
         }
     }
 
@@ -534,7 +533,8 @@ public class MainController implements Initializable, AutoCloseable {
         @Override
         public void click(MouseEvent mouseEvent, RedisKey redisKey) {
             if (MouseEventUtils.isDoubleClick(mouseEvent) && redisKey != null) {
-                startRefreshValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
+                RedisValueTask task = new RedisValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
+                TaskManger.getInstance().execute(task, valueTaskWorkerStateEventHandler);
             }
         }
 

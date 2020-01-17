@@ -9,15 +9,14 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
 import io.lettuce.core.support.ConnectionPoolSupport;
-import javafx.concurrent.WorkerStateEvent;
-import javafx.event.EventHandler;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 public class RedisConnectionPoolTask extends BaseTask<RedisPoolWrapper> {
 
-    public RedisConnectionPoolTask(RedisServerProperty serverProperty, EventHandler<WorkerStateEvent> eventHandler) {
-        super(serverProperty, eventHandler);
+    public RedisConnectionPoolTask(RedisServerProperty serverProperty) {
+        super(serverProperty);
+        updateTitle("初始化连接");
     }
 
     @Override

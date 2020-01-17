@@ -2,14 +2,13 @@ package com.jean.redis.client.task;
 
 import com.jean.redis.client.model.RedisServerProperty;
 import io.lettuce.core.api.StatefulRedisConnection;
-import javafx.concurrent.WorkerStateEvent;
-import javafx.event.EventHandler;
 
 public class RedisServerInfoTask extends BaseTask<String> {
 
 
-    public RedisServerInfoTask(RedisServerProperty serverProperty, EventHandler<WorkerStateEvent> eventHandler) {
-        super(serverProperty, eventHandler);
+    public RedisServerInfoTask(RedisServerProperty serverProperty) {
+        super(serverProperty);
+        updateMessage("服务器信息");
     }
 
     @Override

@@ -72,5 +72,5 @@ jfx {
                "-verbose:class"]
     jvmProperties = [:]
     userJvmArgs = [:]
-    launcherArguments = ["redis-client", "1.0.0-release"]
+    launcherArguments = ["redis-client", "1.0.0-Release"]
 }

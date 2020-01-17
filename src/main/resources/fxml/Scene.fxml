@@ -95,8 +95,8 @@
             <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
                 <Label fx:id="serverInfoLabel" text="--" />
             </HBox>
-            <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
-                <Label fx:id="messageLabel" text="--" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                <Label fx:id="messageLabel" text="--" HBox.hgrow="SOMETIMES">
                     <HBox.margin>
                         <Insets left="5.0" />
                     </HBox.margin>

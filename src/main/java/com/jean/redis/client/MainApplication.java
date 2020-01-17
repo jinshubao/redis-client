@@ -1,7 +1,6 @@
 package com.jean.redis.client;
 
 import com.jean.redis.client.constant.CommonConstant;
-import com.jean.redis.client.factory.RedisThreadFactory;
 import com.jean.redis.client.util.ResourceLoader;
 import com.jean.redis.client.util.StringUtils;
 import javafx.application.Application;
@@ -13,17 +12,14 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Constructor;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class MainApplication extends Application {
 
@@ -33,39 +29,28 @@ public class MainApplication extends Application {
 
     private Map<Class<?>, Object> controllers = new HashMap<>();
 
-    private ExecutorService executorService;
-
     private ResourceBundle bundle;
-
-    private Callback<Class<?>, Object> controllerFactory;
-
-    private URL mainUI;
 
     @Override
     public void init() throws Exception {
         //启动参数
         params = getParameters().getRaw();
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
-        executorService = Executors.newFixedThreadPool(CommonConstant.THREAD_POOL_SIZE, new RedisThreadFactory());
-        bundle = ResourceBundle.getBundle("local", Locale.SIMPLIFIED_CHINESE, new EncodingResourceBundleControl("UTF-8"));
-        mainUI = ResourceLoader.load("/fxml/Scene.fxml");
-        controllerFactory = param -> {
-            try {
-                //控制器注入线程池
-                Constructor<?> constructor = param.getDeclaredConstructor(ExecutorService.class);
-                Object instance = constructor.newInstance(executorService);
-                controllers.put(param, instance);
-                return instance;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
+        bundle = ResourceBundle.getBundle("local", Locale.SIMPLIFIED_CHINESE, new EncodingResourceBundleControl(CommonConstant.CHARSET_UTF8));
     }
 
     @Override
     public void start(Stage stage) throws Exception {
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_START, this));
-        FXMLLoader loader = new FXMLLoader(mainUI, bundle, null, controllerFactory);
+        FXMLLoader loader = new FXMLLoader(ResourceLoader.load("/fxml/Scene.fxml"), bundle, null, param -> {
+            try {
+                Object instance = param.newInstance();
+                controllers.put(param, instance);
+                return instance;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
         Parent root = loader.load();
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
@@ -121,9 +106,9 @@ public class MainApplication extends Application {
      */
     private static final class EncodingResourceBundleControl extends ResourceBundle.Control {
 
-        private final String encoding;
+        private final Charset encoding;
 
-        private EncodingResourceBundleControl(String encoding) {
+        private EncodingResourceBundleControl(Charset encoding) {
             this.encoding = encoding;
         }
 

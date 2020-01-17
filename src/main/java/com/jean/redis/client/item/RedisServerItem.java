@@ -44,12 +44,12 @@ public class RedisServerItem extends TreeItem<Object> implements Menuable, Mouse
 
         MenuItem deleteItem = new MenuItem("删除连接", new ImageView(new Image(ResourceLoader.Image.delete_16)));
         deleteItem.setOnAction(event -> this.handler.delete(event, RedisServerItem.this, this.serverProperty));
-        contextMenu = new ContextMenu();
-        contextMenu.getItems().addAll(openItem, closeItem, propertyItem, deleteItem);
+        this.contextMenu = new ContextMenu();
+        this.contextMenu.getItems().addAll(openItem, closeItem, propertyItem, deleteItem);
 
-        mouseEventEventHandler = event -> handler.click(event, this, this.serverProperty);
+        this.mouseEventEventHandler = event -> handler.click(event, this, this.serverProperty);
 
-        setGraphic(new ImageView(new Image(ResourceLoader.Image.server_16)));
+        this.setGraphic(new ImageView(new Image(ResourceLoader.Image.server_16)));
     }
 
     @Override

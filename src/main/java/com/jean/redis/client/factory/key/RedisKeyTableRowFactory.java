@@ -1,4 +1,4 @@
-package com.jean.redis.client.factory;
+package com.jean.redis.client.factory.key;
 
 import com.jean.redis.client.handler.RedisKeyActionEventHandler;
 import com.jean.redis.client.model.RedisKey;

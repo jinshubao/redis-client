@@ -24,16 +24,16 @@ public class RedisKeysTask extends BaseTask<List<RedisKey>> {
     private boolean typeAction;
     private boolean ttlAction;
 
-    public RedisKeysTask(RedisServerProperty serverProperty, int database, EventHandler<WorkerStateEvent> eventHandler) {
-        this(serverProperty, database, eventHandler, false, false);
+    public RedisKeysTask(RedisServerProperty serverProperty, int database) {
+        this(serverProperty, database, false, false);
     }
 
-    public RedisKeysTask(RedisServerProperty serverProperty, int database, EventHandler<WorkerStateEvent> eventHandler,
-                         boolean typeAction, boolean ttlAction) {
-        super(serverProperty, eventHandler);
+    public RedisKeysTask(RedisServerProperty serverProperty, int database,boolean typeAction, boolean ttlAction) {
+        super(serverProperty);
         this.database = database;
         this.typeAction = typeAction;
         this.ttlAction = ttlAction;
+        updateTitle("获取key");
     }
 
     @Override

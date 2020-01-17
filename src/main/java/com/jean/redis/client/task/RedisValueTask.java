@@ -7,8 +7,6 @@ import com.jean.redis.client.model.RedisValueWrapper;
 import io.lettuce.core.*;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
-import javafx.concurrent.WorkerStateEvent;
-import javafx.event.EventHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,10 +19,11 @@ public class RedisValueTask extends BaseTask<RedisValueWrapper> {
     private final byte[] key;
 
 
-    public RedisValueTask(RedisServerProperty serverProperty, int database, byte[] key, EventHandler<WorkerStateEvent> eventHandler) {
-        super(serverProperty, eventHandler);
+    public RedisValueTask(RedisServerProperty serverProperty, int database, byte[] key) {
+        super(serverProperty);
         this.database = database;
         this.key = key;
+        updateTitle("获取value");
     }
 
 
@@ -77,9 +76,7 @@ public class RedisValueTask extends BaseTask<RedisValueWrapper> {
                 MapScanCursor<byte[], byte[]> cursor = commands.hscan(key, scanCursor, scanArgs);
                 scanCursor = ScanCursor.of(cursor.getCursor());
                 scanCursor.setFinished(cursor.isFinished());
-                cursor.getMap().forEach((k, v) -> {
-                    value.add(new RedisValue(k, v));
-                });
+                cursor.getMap().forEach((k, v) -> value.add(new RedisValue(k, v)));
                 updateProgress(size, value.size());
                 if (isCancelled()) {
                     break;

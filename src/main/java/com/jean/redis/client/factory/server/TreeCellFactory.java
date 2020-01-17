@@ -1,4 +1,4 @@
-package com.jean.redis.client.factory;
+package com.jean.redis.client.factory.server;
 
 
 import com.jean.redis.client.item.Menuable;
