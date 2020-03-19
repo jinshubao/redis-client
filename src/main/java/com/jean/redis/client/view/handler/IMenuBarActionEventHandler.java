@@ -1,15 +1,13 @@
 package com.jean.redis.client.view.handler;
 
-import javafx.event.ActionEvent;
-
 /**
  * 菜单栏事件处理器
  */
 public interface IMenuBarActionEventHandler {
 
-    void create(ActionEvent actionEvent);
+    void create();
 
-    void exit(ActionEvent actionEvent);
+    void exit();
 
-    void about(ActionEvent actionEvent);
+    void about();
 }

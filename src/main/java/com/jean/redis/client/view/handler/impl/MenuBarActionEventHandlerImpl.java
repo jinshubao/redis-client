@@ -1,11 +1,10 @@
 package com.jean.redis.client.view.handler.impl;
 
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
+import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.view.RedisServerItem;
 import com.jean.redis.client.view.handler.BaseEventHandler;
 import com.jean.redis.client.view.handler.IMenuBarActionEventHandler;
-import com.jean.redis.client.view.RedisServerItem;
-import com.jean.redis.client.model.RedisServerProperty;
-import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.SplitPane;
@@ -22,7 +21,7 @@ public class MenuBarActionEventHandlerImpl extends BaseEventHandler implements I
     }
 
     @Override
-    public void create(ActionEvent actionEvent) {
+    public void create() {
         connectionDialog().showAndWait().ifPresent(property -> {
             RedisServerItem serverItem = new RedisServerItem(property, new RedisServerItemActionEventHandler(getParent()));
             serverItem.setExpanded(false);
@@ -31,12 +30,12 @@ public class MenuBarActionEventHandlerImpl extends BaseEventHandler implements I
     }
 
     @Override
-    public void exit(ActionEvent actionEvent) {
+    public void exit() {
         System.exit(0);
     }
 
     @Override
-    public void about(ActionEvent actionEvent) {
+    public void about() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("About");
         alert.setHeaderText("Redis客户端工具");

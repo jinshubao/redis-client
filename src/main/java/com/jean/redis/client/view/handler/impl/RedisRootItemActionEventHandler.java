@@ -36,7 +36,7 @@ public class RedisRootItemActionEventHandler extends BaseMouseEventHandler<Redis
 
     private CreateRedisServerDialog connectionDialog() {
         RedisServerProperty property = new RedisServerProperty();
-        property.setHost("redis.jean.com");
+        property.setHost("localhost");
         property.setPort(6379);
         property.setPassword("");
         return CreateRedisServerDialog.newInstance(property);

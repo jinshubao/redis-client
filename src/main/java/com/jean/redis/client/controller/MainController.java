@@ -66,7 +66,7 @@ public class MainController implements Initializable, AutoCloseable {
     @FXML
     private Label messageLabel;
     @FXML
-    private MenuItem newConnectionMenuItem;
+    private MenuItem exit;
     @FXML
     private MenuItem aboutMenuItem;
 
@@ -78,8 +78,8 @@ public class MainController implements Initializable, AutoCloseable {
     public void initialize(URL url, ResourceBundle bundle) {
 
         IMenuBarActionEventHandler menuBarActionEventHandler = new MenuBarActionEventHandlerImpl(root);
-        newConnectionMenuItem.setOnAction(menuBarActionEventHandler::create);
-        aboutMenuItem.setOnAction(menuBarActionEventHandler::about);
+        exit.setOnAction(event -> menuBarActionEventHandler.exit());
+        aboutMenuItem.setOnAction(event -> menuBarActionEventHandler.about());
 
         RedisRootItem rootItem = new RedisRootItem("服务器列表", new RedisRootItemActionEventHandler(root));
         rootItem.setExpanded(true);

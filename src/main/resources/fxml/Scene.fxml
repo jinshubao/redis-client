@@ -19,12 +19,12 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="root" prefHeight="700.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8.0.999-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.jean.redis.client.controller.MainController">
+<BorderPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/8.0.999-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.jean.redis.client.controller.MainController">
     <top>
         <VBox>
             <MenuBar BorderPane.alignment="CENTER">
                 <Menu mnemonicParsing="false" text="文件">
-                    <MenuItem fx:id="newConnectionMenuItem" mnemonicParsing="false" text="新建连接" />
+                    <MenuItem fx:id="exit" mnemonicParsing="false" text="退出" />
                 </Menu>
                 <Menu mnemonicParsing="false" text="帮助">
                     <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="关于" />
