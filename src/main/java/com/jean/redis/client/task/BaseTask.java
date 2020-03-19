@@ -23,7 +23,7 @@ public abstract class BaseTask<V> extends Task<V> {
     private final String taskId;
     private final String taskType;
 
-    BaseTask(RedisServerProperty serverProperty) {
+    public BaseTask(RedisServerProperty serverProperty) {
         this.serverProperty = serverProperty;
         this.taskId = UUID.randomUUID().toString();
         this.taskType = this.getClass().getName();
@@ -31,13 +31,13 @@ public abstract class BaseTask<V> extends Task<V> {
 
     @Override
     protected void scheduled() {
-        updateMessage("开始执行...");
+        updateMessage("开始执行");
         logger.debug("task[{}] scheduled", this);
     }
 
     @Override
     protected void cancelled() {
-        updateMessage("执行取消.");
+        updateMessage("执行取消");
         logger.debug("task[{}] cancelled", this);
     }
 
@@ -48,7 +48,7 @@ public abstract class BaseTask<V> extends Task<V> {
 
     @Override
     protected void failed() {
-        updateMessage("执行失败...");
+        updateMessage("执行失败");
         logger.debug("task[{}] failed", this);
         Throwable exception = getException();
         if (exception != null) {
@@ -59,7 +59,7 @@ public abstract class BaseTask<V> extends Task<V> {
 
     @Override
     protected void succeeded() {
-        updateMessage("执行成功.");
+        updateMessage("执行成功");
         logger.debug("task[{}] succeeded", this);
     }
 
@@ -71,7 +71,7 @@ public abstract class BaseTask<V> extends Task<V> {
         MessageUtils.updateMessage(msg);
     }
 
-    StatefulRedisConnection<byte[], byte[]> getConnection() throws Exception {
+    protected StatefulRedisConnection<byte[], byte[]> getConnection() throws Exception {
         return CommonConstant.getConnectionPool(serverProperty.getUuid()).borrowObject();
     }
 

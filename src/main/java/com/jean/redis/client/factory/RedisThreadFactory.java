@@ -1,4 +1,4 @@
-package com.jean.redis.client.factory.thread;
+package com.jean.redis.client.factory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;

@@ -1,0 +1,94 @@
+package com.jean.redis.client.view.handler.impl;
+
+import com.jean.redis.client.mange.TaskManger;
+import com.jean.redis.client.model.RedisKey;
+import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.task.RedisKeysTask;
+import com.jean.redis.client.view.ProgressIndicatorPlaceholder;
+import com.jean.redis.client.view.RedisDatabaseItem;
+import com.jean.redis.client.view.handler.BaseMouseEventHandler;
+import com.jean.redis.client.view.handler.IRedisDatabaseItemActionEventHandler;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
+import javafx.event.WeakEventHandler;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+
+import java.util.List;
+
+public class RedisDatabaseItemActionEventHandlerImpl extends BaseMouseEventHandler<RedisDatabaseItem> implements IRedisDatabaseItemActionEventHandler {
+
+    private final TableView<RedisKey> keyTableView;
+
+    private final TableColumn<RedisKey, Integer> keyNoColumn;
+    private final TableColumn<RedisKey, byte[]> keyColumn;
+    private final TableColumn<RedisKey, String> typeColumn;
+    private final TableColumn<RedisKey, Number> sizeColumn;
+    private final TableColumn<RedisKey, Number> ttlColumn;
+    private final Label serverInfoLabel;
+
+
+    private final EventHandler<WorkerStateEvent> eventEventHandler;
+    private final WeakEventHandler<WorkerStateEvent> keyTaskWorkerStateEventHandler;
+
+    public RedisDatabaseItemActionEventHandlerImpl(Node root) {
+        super(root);
+        SplitPane splitPane = (SplitPane) root.lookup("#splitPane");
+        this.keyTableView = (TableView<RedisKey>) splitPane.getItems().stream().filter(item -> "keyTableView".equals(item.getId())).findFirst().orElseThrow(() -> new RuntimeException("id='keyTableView' not fund"));
+
+        this.keyNoColumn = (TableColumn<RedisKey, Integer>) this.keyTableView.getColumns().get(0);
+        this.keyColumn = (TableColumn<RedisKey, byte[]>) this.keyTableView.getColumns().get(1);
+        this.typeColumn = (TableColumn<RedisKey, String>) this.keyTableView.getColumns().get(2);
+        this.sizeColumn = (TableColumn<RedisKey, Number>) this.keyTableView.getColumns().get(3);
+        this.ttlColumn = (TableColumn<RedisKey, Number>) this.keyTableView.getColumns().get(3);
+
+        this.serverInfoLabel = this.lookup("#serverInfoLabel");
+
+        this.eventEventHandler = event -> {
+            ProgressIndicatorPlaceholder keyProgressIndicator = (ProgressIndicatorPlaceholder) keyTableView.getPlaceholder();
+            if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SCHEDULED) {
+                keyTableView.getItems().clear();
+                keyProgressIndicator.indicatorProgressProperty().unbind();
+                keyProgressIndicator.indicatorProgressProperty().bind(event.getSource().progressProperty());
+                keyProgressIndicator.indicatorVisibleProperty().unbind();
+                keyProgressIndicator.indicatorVisibleProperty().bind(event.getSource().runningProperty());
+            } else if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SUCCEEDED) {
+                List<RedisKey> value = (List<RedisKey>) event.getSource().getValue();
+                if (value != null) {
+                    keyTableView.getItems().addAll(value);
+                }
+            }
+        };
+        this.keyTaskWorkerStateEventHandler = new WeakEventHandler<>(eventEventHandler);
+    }
+
+    @Override
+    public void onDoubleClick(RedisDatabaseItem treeItem) {
+        this.refresh(treeItem);
+    }
+
+    @Override
+    public void refresh(RedisDatabaseItem treeItem) {
+        this.refreshKey(treeItem.getServerProperty(), treeItem.getDatabase());
+    }
+
+    @Override
+    public void flush(RedisDatabaseItem treeItem) {
+
+    }
+
+    @Override
+    public void onSelected(RedisDatabaseItem treeItem) {
+        RedisServerProperty serverProperty = treeItem.getServerProperty();
+        this.serverInfoLabel.setText(serverProperty + ":" + treeItem.getDatabase());
+        this.refreshKey(serverProperty, treeItem.getDatabase());
+    }
+
+    private void refreshKey(RedisServerProperty serverProperty, int database) {
+        RedisKeysTask task = new RedisKeysTask(serverProperty, database, typeColumn.isVisible(), ttlColumn.isVisible());
+        TaskManger.getInstance().execute(task, keyTaskWorkerStateEventHandler);
+    }
+}

@@ -1,6 +1,6 @@
 package com.jean.redis.client.mange;
 
-import com.jean.redis.client.factory.thread.RedisThreadFactory;
+import com.jean.redis.client.factory.RedisThreadFactory;
 import com.jean.redis.client.task.BaseTask;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;

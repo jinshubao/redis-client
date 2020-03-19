@@ -1,6 +1,5 @@
 package com.jean.redis.client;
 
-import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.util.ResourceLoader;
 import com.jean.redis.client.util.StringUtils;
 import javafx.application.Application;
@@ -19,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class MainApplication extends Application {
@@ -36,7 +36,7 @@ public class MainApplication extends Application {
         //启动参数
         params = getParameters().getRaw();
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
-        bundle = ResourceBundle.getBundle("local", Locale.SIMPLIFIED_CHINESE, new EncodingResourceBundleControl(CommonConstant.CHARSET_UTF8));
+        bundle = ResourceBundle.getBundle("local", Locale.SIMPLIFIED_CHINESE, new EncodingResourceBundleControl());
     }
 
     @Override
@@ -107,6 +107,10 @@ public class MainApplication extends Application {
     private static final class EncodingResourceBundleControl extends ResourceBundle.Control {
 
         private final Charset encoding;
+
+        EncodingResourceBundleControl() {
+            this.encoding = StandardCharsets.UTF_8;
+        }
 
         private EncodingResourceBundleControl(Charset encoding) {
             this.encoding = encoding;

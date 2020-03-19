@@ -1,11 +1,11 @@
-package com.jean.redis.client.handler;
+package com.jean.redis.client.view.handler;
 
 import javafx.event.ActionEvent;
 
 /**
  * 菜单栏事件处理器
  */
-public interface MenuBarActionEventHandler {
+public interface IMenuBarActionEventHandler {
 
     void create(ActionEvent actionEvent);
 

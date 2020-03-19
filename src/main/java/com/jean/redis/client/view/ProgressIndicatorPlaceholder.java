@@ -1,4 +1,4 @@
-package com.jean.redis.client.ctrl;
+package com.jean.redis.client.view;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;

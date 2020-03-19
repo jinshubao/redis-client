@@ -1,53 +1,48 @@
-package com.jean.redis.client.item;
+package com.jean.redis.client.view;
 
-import com.jean.redis.client.handler.RedisServerItemActionEventHandler;
+import com.jean.redis.client.view.handler.IRedisServerItemActionEventHandler;
 import com.jean.redis.client.model.RedisServerProperty;
 import com.jean.redis.client.util.ResourceLoader;
+import com.jean.redis.client.view.action.IContextMenu;
+import com.jean.redis.client.view.action.IMouseAction;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TreeItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 
-public class RedisServerItem extends TreeItem<Object> implements Menuable, MouseClickable {
+public class RedisServerItem extends BaseTreeItem<Object> implements IContextMenu, IMouseAction {
 
     private BooleanProperty open = new SimpleBooleanProperty(this, "open", false);
 
     private final ContextMenu contextMenu;
 
-    private final EventHandler<MouseEvent> mouseEventEventHandler;
-
     private final RedisServerProperty serverProperty;
 
-    private final RedisServerItemActionEventHandler handler;
+    private final IRedisServerItemActionEventHandler actionEventHandler;
 
-    public RedisServerItem(RedisServerProperty serverProperty, RedisServerItemActionEventHandler handler) {
-        super(serverProperty.toString());
+    public RedisServerItem(RedisServerProperty serverProperty, IRedisServerItemActionEventHandler actionEventHandler) {
+        super(serverProperty.toString(), actionEventHandler);
         this.serverProperty = serverProperty;
-        this.handler = handler;
+        this.actionEventHandler = actionEventHandler;
 
         MenuItem openItem = new MenuItem("打开连接", new ImageView(new Image(ResourceLoader.Image.connect_16)));
         openItem.disableProperty().bind(openProperty());
-        openItem.setOnAction(event -> this.handler.open(event, RedisServerItem.this, this.serverProperty));
+        openItem.setOnAction(event -> this.actionEventHandler.open(this));
 
         MenuItem closeItem = new MenuItem("关闭连接", new ImageView(new Image(ResourceLoader.Image.disconnect_16)));
         closeItem.disableProperty().bind(openProperty().not());
-        closeItem.setOnAction(event -> this.handler.close(event, RedisServerItem.this, this.serverProperty));
+        closeItem.setOnAction(event -> this.actionEventHandler.close(this));
 
         MenuItem propertyItem = new MenuItem("连接属性");
         propertyItem.disableProperty().bind(openProperty().not());
-        propertyItem.setOnAction(event -> this.handler.property(event, RedisServerItem.this, this.serverProperty));
+        propertyItem.setOnAction(event -> this.actionEventHandler.property(this));
 
         MenuItem deleteItem = new MenuItem("删除连接", new ImageView(new Image(ResourceLoader.Image.delete_16)));
-        deleteItem.setOnAction(event -> this.handler.delete(event, RedisServerItem.this, this.serverProperty));
+        deleteItem.setOnAction(event -> this.actionEventHandler.delete(this));
         this.contextMenu = new ContextMenu();
         this.contextMenu.getItems().addAll(openItem, closeItem, propertyItem, deleteItem);
-
-        this.mouseEventEventHandler = event -> handler.click(event, this, this.serverProperty);
 
         this.setGraphic(new ImageView(new Image(ResourceLoader.Image.server_16)));
     }
@@ -55,11 +50,6 @@ public class RedisServerItem extends TreeItem<Object> implements Menuable, Mouse
     @Override
     public ContextMenu getContextMenu() {
         return this.contextMenu;
-    }
-
-    @Override
-    public EventHandler<MouseEvent> getClickEventHandler() {
-        return this.mouseEventEventHandler;
     }
 
     public boolean isOpen() {
@@ -72,5 +62,9 @@ public class RedisServerItem extends TreeItem<Object> implements Menuable, Mouse
 
     public void setOpen(boolean open) {
         this.open.set(open);
+    }
+
+    public RedisServerProperty getServerProperty() {
+        return serverProperty;
     }
 }

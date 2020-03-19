@@ -1,14 +1,12 @@
-package com.jean.redis.client.factory.server;
+package com.jean.redis.client.factory;
 
 
-import com.jean.redis.client.item.Menuable;
-import com.jean.redis.client.item.MouseClickable;
-import javafx.event.EventHandler;
+import com.jean.redis.client.view.action.IContextMenu;
+import com.jean.redis.client.view.action.IMouseAction;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.input.MouseEvent;
 import javafx.util.Callback;
 
 /**
@@ -26,9 +24,8 @@ public class TreeCellFactory implements Callback<TreeView<Object>, TreeCell<Obje
         RedisServerTreeCell() {
             setOnMouseClicked(event -> {
                 TreeItem<Object> treeItem = getTreeItem();
-                if (treeItem instanceof MouseClickable) {
-                    EventHandler<MouseEvent> eventHandler = ((MouseClickable) treeItem).getClickEventHandler();
-                    eventHandler.handle(event);
+                if (treeItem instanceof IMouseAction) {
+                    ((IMouseAction) treeItem).click(event);
                 }
             });
         }
@@ -43,10 +40,12 @@ public class TreeCellFactory implements Callback<TreeView<Object>, TreeCell<Obje
             } else {
                 setText(item.toString());
                 TreeItem<Object> treeItem = getTreeItem();
-                if (treeItem instanceof Menuable) {
-                    Menuable treeContextMenu = (Menuable) treeItem;
+                if (treeItem instanceof IContextMenu) {
+                    IContextMenu treeContextMenu = (IContextMenu) treeItem;
                     ContextMenu contextMenu = treeContextMenu.getContextMenu();
                     this.setContextMenu(contextMenu);
+                }else{
+                    setContextMenu(null);
                 }
             }
         }

@@ -1,8 +1,8 @@
-package com.jean.redis.client.item;
+package com.jean.redis.client.view.action;
 
 import javafx.scene.control.ContextMenu;
 
-public interface Menuable {
+public interface IContextMenu {
 
     /**
      * 菜单
