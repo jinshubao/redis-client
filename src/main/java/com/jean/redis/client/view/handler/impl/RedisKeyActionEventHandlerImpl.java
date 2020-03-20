@@ -1,53 +1,53 @@
 package com.jean.redis.client.view.handler.impl;
 
 import com.jean.redis.client.constant.CommonConstant;
-import com.jean.redis.client.view.ProgressIndicatorPlaceholder;
-import com.jean.redis.client.view.handler.BaseMouseEventHandler;
-import com.jean.redis.client.view.handler.IRedisKeyActionEventHandler;
 import com.jean.redis.client.mange.TaskManger;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisValue;
 import com.jean.redis.client.model.RedisValueWrapper;
 import com.jean.redis.client.task.RedisValueTask;
+import com.jean.redis.client.util.NodeUtils;
 import com.jean.redis.client.util.StringUtils;
+import com.jean.redis.client.view.ProgressIndicatorPlaceholder;
+import com.jean.redis.client.view.handler.IRedisKeyActionEventHandler;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
+import javafx.event.WeakEventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 
-public class RedisKeyActionEventHandlerImpl extends BaseMouseEventHandler<TableRow<RedisKey>> implements IRedisKeyActionEventHandler {
+/**
+ * @author jinshubao
+ */
+public class RedisKeyActionEventHandlerImpl implements IRedisKeyActionEventHandler {
 
-    private TableView<RedisKey> keyTableView;
-    private TableView<RedisValue> valueTableView;
-    private TableColumn<RedisValue, Integer> valueNoColumn;
-    private TableColumn<RedisValue, byte[]> valueKeyColumn;
-    private TableColumn<RedisValue, byte[]> valueColumn;
-    private TableColumn<RedisValue, Number> valueScoreColumn;
-    private TextField keyTextFiled;
-    private TextArea valueTextArea;
-
-    private EventHandler<WorkerStateEvent> valueTaskWorkerStateEventHandler;
-
+    private final TableView<RedisKey> keyTableView;
+    private final TableView<RedisValue> valueTableView;
+    private final TableColumn<RedisValue, Integer> valueNoColumn;
+    private final TableColumn<RedisValue, byte[]> valueKeyColumn;
+    private final TableColumn<RedisValue, byte[]> valueColumn;
+    private final TableColumn<RedisValue, Number> valueScoreColumn;
+    private final TextField keyTextFiled;
+    private final TextArea valueTextArea;
+    private final EventHandler<WorkerStateEvent> valueTaskWorkerStateEventHandler;
 
     public RedisKeyActionEventHandlerImpl(Node root) {
-        super(root);
+        this.keyTableView = NodeUtils.lookup(root, "#keyTableView");
+        this.valueTableView = NodeUtils.lookup(root, "#valueTableView");
 
-        SplitPane splitPane = (SplitPane) root.lookup("#splitPane");
-        this.keyTableView = (TableView<RedisKey>) splitPane.getItems().stream().filter(item -> "keyTableView".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='keyTableView' not fund"));
-        SplitPane  valueSplitPane = (SplitPane) splitPane.getItems().stream().filter(item -> "valueSplitPane".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='valueSplitPane' not fund"));
-        this.valueTableView = (TableView<RedisValue>) valueSplitPane.getItems().stream().filter(item -> "valueTableView".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='valueTableView' not fund"));
-        GridPane valueGridPane = (GridPane) valueSplitPane.getItems().stream().filter(item -> "valueGridPane".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='valueGridPane' not fund"));
-        this.keyTextFiled = (TextField) valueGridPane.lookup("#keyTextFiled");
-        this.valueTextArea = (TextArea) valueGridPane.lookup("#valueTextArea");
+        this.valueNoColumn = NodeUtils.lookup(valueTableView, "valueNoColumn");
+        this.valueKeyColumn = NodeUtils.lookup(valueTableView, "valueKeyColumn");
+        this.valueColumn = NodeUtils.lookup(valueTableView, "valueColumn");
+        this.valueScoreColumn = NodeUtils.lookup(valueTableView, "valueScoreColumn");
 
-        this.valueNoColumn = (TableColumn<RedisValue, Integer>) this.valueTableView.getColumns().get(0);
-        this.valueKeyColumn = (TableColumn<RedisValue, byte[]>) this.valueTableView.getColumns().get(1);
-        this.valueColumn = (TableColumn<RedisValue, byte[]>) this.valueTableView.getColumns().get(2);
-        this.valueScoreColumn = (TableColumn<RedisValue, Number>) this.valueTableView.getColumns().get(3);
+        this.keyTextFiled = NodeUtils.lookup(root, "#keyTextFiled");
+        this.valueTextArea = NodeUtils.lookup(root, "#valueTextArea");
+
+        SplitPane valueSplitPane = NodeUtils.lookup(root, "#valueSplitPane");
 
         //redis getValue task success event handler
-        valueTaskWorkerStateEventHandler = event -> {
+        this.valueTaskWorkerStateEventHandler = event -> {
 
             ProgressIndicatorPlaceholder valueProgressIndicator = (ProgressIndicatorPlaceholder) valueTableView.getPlaceholder();
 
@@ -86,7 +86,7 @@ public class RedisKeyActionEventHandlerImpl extends BaseMouseEventHandler<TableR
     public void onDoubleClick(TableRow<RedisKey> tableRow) {
         RedisKey redisKey = tableRow.getItem();
         RedisValueTask task = new RedisValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
-        TaskManger.getInstance().execute(task, valueTaskWorkerStateEventHandler);
+        TaskManger.getInstance().execute(task, new WeakEventHandler<>(this.valueTaskWorkerStateEventHandler));
     }
 
     @Override
@@ -104,6 +104,6 @@ public class RedisKeyActionEventHandlerImpl extends BaseMouseEventHandler<TableR
     public void onSelected(TableRow<RedisKey> tableRow) {
         RedisKey redisKey = tableRow.getItem();
         RedisValueTask task = new RedisValueTask(redisKey.getServer(), redisKey.getDatabase(), redisKey.getKey());
-        TaskManger.getInstance().execute(task, valueTaskWorkerStateEventHandler);
+        TaskManger.getInstance().execute(task, new WeakEventHandler<>(this.valueTaskWorkerStateEventHandler));
     }
 }

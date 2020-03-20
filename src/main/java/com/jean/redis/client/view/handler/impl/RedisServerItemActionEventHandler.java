@@ -2,11 +2,6 @@ package com.jean.redis.client.view.handler.impl;
 
 import com.jean.redis.client.constant.CommonConstant;
 import com.jean.redis.client.dialog.RedisServerInfoDialog;
-import com.jean.redis.client.view.handler.BaseMouseEventHandler;
-import com.jean.redis.client.view.handler.IRedisDatabaseItemActionEventHandler;
-import com.jean.redis.client.view.handler.IRedisServerItemActionEventHandler;
-import com.jean.redis.client.view.RedisDatabaseItem;
-import com.jean.redis.client.view.RedisServerItem;
 import com.jean.redis.client.mange.TaskManger;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisPoolWrapper;
@@ -14,38 +9,38 @@ import com.jean.redis.client.model.RedisServerProperty;
 import com.jean.redis.client.model.RedisValue;
 import com.jean.redis.client.task.BaseTask;
 import com.jean.redis.client.task.RedisConnectionPoolTask;
+import com.jean.redis.client.util.NodeUtils;
+import com.jean.redis.client.view.RedisDatabaseItem;
+import com.jean.redis.client.view.RedisServerItem;
+import com.jean.redis.client.view.handler.IRedisDatabaseItemActionEventHandler;
+import com.jean.redis.client.view.handler.IRedisServerItemActionEventHandler;
 import io.lettuce.core.api.StatefulRedisConnection;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import javafx.event.WeakEventHandler;
 import javafx.scene.Node;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import org.apache.commons.pool2.ObjectPool;
 
-public class RedisServerItemActionEventHandler extends BaseMouseEventHandler<RedisServerItem> implements IRedisServerItemActionEventHandler {
+/**
+ * @author jinshubao
+ */
+public class RedisServerItemActionEventHandler implements IRedisServerItemActionEventHandler {
 
     private final TableView<RedisKey> keyTableView;
     private final TableView<RedisValue> valueTableView;
     private final TextField keyTextFiled;
     private final TextArea valueTextArea;
     private final EventHandler<WorkerStateEvent> serverInfoWorkerStateEventHandler;
-    private final WeakEventHandler<WorkerStateEvent> weakServerInfoWorkerStateEventHandler;
-
-    private IRedisDatabaseItemActionEventHandler redisDatabaseItemActionEventHandler;
+    private final IRedisDatabaseItemActionEventHandler redisDatabaseItemActionEventHandler;
 
     public RedisServerItemActionEventHandler(Node root) {
-        super(root);
-        SplitPane splitPane = (SplitPane) root.lookup("#splitPane");
-        this.keyTableView = (TableView<RedisKey>) splitPane.getItems().stream().filter(item -> "keyTableView".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='serverTreeView' not fund"));
-        SplitPane  valueSplitPane = (SplitPane) splitPane.getItems().stream().filter(item -> "valueSplitPane".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='valueSplitPane' not fund"));
-        this.valueTableView = (TableView<RedisValue>) valueSplitPane.getItems().stream().filter(item -> "valueTableView".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='valueTableView' not fund"));
-        GridPane valueGridPane = (GridPane) valueSplitPane.getItems().stream().filter(item -> "valueGridPane".equals(item.getId())).findFirst().orElseThrow(()-> new RuntimeException("id='valueGridPane' not fund"));
-        this.keyTextFiled = (TextField) valueGridPane.lookup("#keyTextFiled");
-        this.valueTextArea = (TextArea) valueGridPane.lookup("#valueTextArea");
+        this.keyTableView = NodeUtils.lookup(root, "#keyTableView");
+        this.valueTableView = NodeUtils.lookup(root, "#valueTableView");
+        this.keyTextFiled = NodeUtils.lookup(root, "#keyTextFiled");
+        this.valueTextArea = NodeUtils.lookup(root, "#valueTextArea");
 
         this.serverInfoWorkerStateEventHandler = event -> {
             if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SCHEDULED) {
@@ -54,8 +49,6 @@ public class RedisServerItemActionEventHandler extends BaseMouseEventHandler<Red
                 dialog.show();
             }
         };
-
-        this.weakServerInfoWorkerStateEventHandler = new WeakEventHandler<>(this.serverInfoWorkerStateEventHandler);
         this.redisDatabaseItemActionEventHandler = new RedisDatabaseItemActionEventHandlerImpl(root);
     }
 
@@ -85,7 +78,7 @@ public class RedisServerItemActionEventHandler extends BaseMouseEventHandler<Red
     @Override
     public void property(RedisServerItem serverItem) {
         RedisServerProperty serverProperty = serverItem.getServerProperty();
-        TaskManger.getInstance().execute(new RedisServerInfoTask(serverProperty), this.weakServerInfoWorkerStateEventHandler);
+        TaskManger.getInstance().execute(new RedisServerInfoTask(serverProperty), new WeakEventHandler<>(this.serverInfoWorkerStateEventHandler));
     }
 
 
@@ -128,8 +121,7 @@ public class RedisServerItemActionEventHandler extends BaseMouseEventHandler<Red
 
     private static class RedisServerInfoTask extends BaseTask<String> {
 
-
-        public RedisServerInfoTask(RedisServerProperty serverProperty) {
+        private RedisServerInfoTask(RedisServerProperty serverProperty) {
             super(serverProperty);
             updateMessage("服务器信息");
         }

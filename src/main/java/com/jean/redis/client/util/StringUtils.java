@@ -31,6 +31,9 @@ public final class StringUtils {
     }
 
     public static String byteArrayToString(byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
         return new String(bytes, CommonConstant.CHARSET_UTF8);
     }
 

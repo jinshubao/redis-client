@@ -4,9 +4,11 @@ import com.jean.redis.client.model.RedisKey;
 import javafx.scene.control.TableRow;
 
 /**
- * redis key 列表 事件处理器
+ * Redis key 列表 事件处理器
+ *
+ * @author jinshubao
  */
-public interface IRedisKeyActionEventHandler extends IMouseActionEventHandler<TableRow<RedisKey>> {
+public interface IRedisKeyActionEventHandler extends IMouseEventHandler<TableRow<RedisKey>> {
 
     /**
      * 复制

@@ -2,8 +2,13 @@ package com.jean.redis.client.view.handler;
 
 import com.jean.redis.client.view.RedisDatabaseItem;
 
-public interface IRedisDatabaseItemActionEventHandler extends IMouseActionEventHandler<RedisDatabaseItem> {
 
+/**
+ * Redis 数据库节点事件处理器
+ *
+ * @author jinshubao
+ */
+public interface IRedisDatabaseItemActionEventHandler extends IMouseEventHandler<RedisDatabaseItem> {
 
     /**
      * 刷新

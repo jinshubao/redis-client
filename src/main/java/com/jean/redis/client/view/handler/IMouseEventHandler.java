@@ -1,27 +1,37 @@
 package com.jean.redis.client.view.handler;
 
-public interface IMouseActionEventHandler<T> {
-
+/**
+ * 鼠标事件处理器
+ *
+ * @author jinshubao
+ */
+public interface IMouseEventHandler<T> {
 
     /**
      * 单击
      *
      * @param t 节点
      */
-    void onClick(T t);
+    default void onClick(T t) {
+    }
+
 
     /**
      * 双击
      *
      * @param t 节点
      */
-    void onDoubleClick(T t);
+    default void onDoubleClick(T t) {
+    }
+
 
     /**
      * 选择
      *
      * @param t 节点
      */
-    void onSelected(T t);
+    default void onSelected(T t) {
+    }
+
 
 }

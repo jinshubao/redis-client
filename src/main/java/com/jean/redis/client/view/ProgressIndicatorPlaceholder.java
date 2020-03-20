@@ -7,6 +7,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.StackPane;
 
+/**
+ * @author jinshubao
+ */
 public class ProgressIndicatorPlaceholder extends StackPane {
 
     private final ProgressIndicator progressIndicator;

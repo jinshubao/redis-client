@@ -4,9 +4,9 @@ import com.jean.redis.client.mange.TaskManger;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisServerProperty;
 import com.jean.redis.client.task.RedisKeysTask;
+import com.jean.redis.client.util.NodeUtils;
 import com.jean.redis.client.view.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.view.RedisDatabaseItem;
-import com.jean.redis.client.view.handler.BaseMouseEventHandler;
 import com.jean.redis.client.view.handler.IRedisDatabaseItemActionEventHandler;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
@@ -19,7 +19,10 @@ import javafx.scene.control.TableView;
 
 import java.util.List;
 
-public class RedisDatabaseItemActionEventHandlerImpl extends BaseMouseEventHandler<RedisDatabaseItem> implements IRedisDatabaseItemActionEventHandler {
+/**
+ * @author jinshubao
+ */
+public class RedisDatabaseItemActionEventHandlerImpl implements IRedisDatabaseItemActionEventHandler {
 
     private final TableView<RedisKey> keyTableView;
 
@@ -29,23 +32,18 @@ public class RedisDatabaseItemActionEventHandlerImpl extends BaseMouseEventHandl
     private final TableColumn<RedisKey, Number> sizeColumn;
     private final TableColumn<RedisKey, Number> ttlColumn;
     private final Label serverInfoLabel;
-
-
     private final EventHandler<WorkerStateEvent> eventEventHandler;
-    private final WeakEventHandler<WorkerStateEvent> keyTaskWorkerStateEventHandler;
 
+    @SuppressWarnings("unchecked")
     public RedisDatabaseItemActionEventHandlerImpl(Node root) {
-        super(root);
-        SplitPane splitPane = (SplitPane) root.lookup("#splitPane");
-        this.keyTableView = (TableView<RedisKey>) splitPane.getItems().stream().filter(item -> "keyTableView".equals(item.getId())).findFirst().orElseThrow(() -> new RuntimeException("id='keyTableView' not fund"));
 
-        this.keyNoColumn = (TableColumn<RedisKey, Integer>) this.keyTableView.getColumns().get(0);
-        this.keyColumn = (TableColumn<RedisKey, byte[]>) this.keyTableView.getColumns().get(1);
-        this.typeColumn = (TableColumn<RedisKey, String>) this.keyTableView.getColumns().get(2);
-        this.sizeColumn = (TableColumn<RedisKey, Number>) this.keyTableView.getColumns().get(3);
-        this.ttlColumn = (TableColumn<RedisKey, Number>) this.keyTableView.getColumns().get(3);
-
-        this.serverInfoLabel = this.lookup("#serverInfoLabel");
+        this.keyTableView = NodeUtils.lookup(root, "#keyTableView");
+        this.keyNoColumn = NodeUtils.lookup(this.keyTableView, "keyNoColumn");
+        this.keyColumn = NodeUtils.lookup(this.keyTableView, "keyColumn");
+        this.typeColumn = NodeUtils.lookup(this.keyTableView, "typeColumn");
+        this.sizeColumn = NodeUtils.lookup(this.keyTableView, "sizeColumn");
+        this.ttlColumn = NodeUtils.lookup(this.keyTableView, "ttlColumn");
+        this.serverInfoLabel = NodeUtils.lookup(root, "#serverInfoLabel");
 
         this.eventEventHandler = event -> {
             ProgressIndicatorPlaceholder keyProgressIndicator = (ProgressIndicatorPlaceholder) keyTableView.getPlaceholder();
@@ -62,7 +60,6 @@ public class RedisDatabaseItemActionEventHandlerImpl extends BaseMouseEventHandl
                 }
             }
         };
-        this.keyTaskWorkerStateEventHandler = new WeakEventHandler<>(eventEventHandler);
     }
 
     @Override
@@ -89,6 +86,6 @@ public class RedisDatabaseItemActionEventHandlerImpl extends BaseMouseEventHandl
 
     private void refreshKey(RedisServerProperty serverProperty, int database) {
         RedisKeysTask task = new RedisKeysTask(serverProperty, database, typeColumn.isVisible(), ttlColumn.isVisible());
-        TaskManger.getInstance().execute(task, keyTaskWorkerStateEventHandler);
+        TaskManger.getInstance().execute(task, new WeakEventHandler<>(eventEventHandler));
     }
 }

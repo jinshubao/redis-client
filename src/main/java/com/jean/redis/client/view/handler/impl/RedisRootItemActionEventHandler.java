@@ -1,27 +1,25 @@
 package com.jean.redis.client.view.handler.impl;
 
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
-import com.jean.redis.client.view.handler.BaseMouseEventHandler;
-import com.jean.redis.client.view.handler.IRedisRootItemActionEventHandler;
-import com.jean.redis.client.view.handler.IRedisServerItemActionEventHandler;
+import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.util.NodeUtils;
 import com.jean.redis.client.view.RedisRootItem;
 import com.jean.redis.client.view.RedisServerItem;
-import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.view.handler.IRedisRootItemActionEventHandler;
+import com.jean.redis.client.view.handler.IRedisServerItemActionEventHandler;
 import javafx.scene.Node;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.TreeView;
 
-public class RedisRootItemActionEventHandler extends BaseMouseEventHandler<RedisRootItem> implements IRedisRootItemActionEventHandler {
+/**
+ * @author jinshubao
+ */
+public class RedisRootItemActionEventHandler implements IRedisRootItemActionEventHandler {
 
     private final TreeView<Object> serverTreeView;
-
     private final IRedisServerItemActionEventHandler redisServerItemActionEventHandler;
 
     public RedisRootItemActionEventHandler(Node root) {
-        super(root);
-        SplitPane splitPane = (SplitPane) root.lookup("#splitPane");
-        this.serverTreeView = (TreeView<Object>) splitPane.getItems().stream().filter(item -> "serverTreeView".equals(item.getId())).findFirst().orElseThrow(() -> new RuntimeException("id='serverTreeView' not fund"));
-
+        this.serverTreeView = NodeUtils.lookup(root, "#serverTreeView");
         this.redisServerItemActionEventHandler = new RedisServerItemActionEventHandler(root);
     }
 

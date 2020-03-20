@@ -1,7 +1,7 @@
 package com.jean.redis.client.factory;
 
-import com.jean.redis.client.view.handler.IRedisKeyActionEventHandler;
 import com.jean.redis.client.model.RedisKey;
+import com.jean.redis.client.view.handler.IRedisKeyActionEventHandler;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.WeakChangeListener;
 import javafx.event.EventHandler;
@@ -29,10 +29,7 @@ public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, Ta
     private static class RedisKeyTableRow extends TableRow<RedisKey> {
 
         private final ChangeListener<Boolean> changeListener;
-        private final WeakChangeListener<Boolean> weakChangeListener;
-
         private final EventHandler<MouseEvent> mouseEventEventHandler;
-        private final WeakEventHandler<MouseEvent> WeakMouseEventHandler;
 
         private RedisKeyTableRow(IRedisKeyActionEventHandler handler) {
 
@@ -41,8 +38,7 @@ public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, Ta
                     handler.onSelected(RedisKeyTableRow.this);
                 }
             };
-            this.weakChangeListener = new WeakChangeListener<>(changeListener);
-            this.selectedProperty().addListener(weakChangeListener);
+            this.selectedProperty().addListener(new WeakChangeListener<>(changeListener));
 
             this.mouseEventEventHandler = event -> {
                 if (event.getButton() == MouseButton.PRIMARY) {
@@ -53,8 +49,7 @@ public class RedisKeyTableRowFactory implements Callback<TableView<RedisKey>, Ta
                     }
                 }
             };
-            this.WeakMouseEventHandler = new WeakEventHandler<>(this.mouseEventEventHandler);
-            this.setOnMouseClicked(WeakMouseEventHandler);
+            this.setOnMouseClicked(new WeakEventHandler<>(this.mouseEventEventHandler));
         }
     }
 }

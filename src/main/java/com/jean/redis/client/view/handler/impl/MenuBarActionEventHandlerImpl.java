@@ -2,28 +2,31 @@ package com.jean.redis.client.view.handler.impl;
 
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
 import com.jean.redis.client.model.RedisServerProperty;
+import com.jean.redis.client.util.NodeUtils;
 import com.jean.redis.client.view.RedisServerItem;
-import com.jean.redis.client.view.handler.BaseEventHandler;
 import com.jean.redis.client.view.handler.IMenuBarActionEventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.TreeView;
 
-public class MenuBarActionEventHandlerImpl extends BaseEventHandler implements IMenuBarActionEventHandler {
+/**
+ * @author jinshubao
+ */
+public class MenuBarActionEventHandlerImpl implements IMenuBarActionEventHandler {
 
-    public TreeView<Object> serverTreeView;
+    private final Node root;
+    private final TreeView<Object> serverTreeView;
+
 
     public MenuBarActionEventHandlerImpl(Node root) {
-        super(root);
-        SplitPane splitPane = (SplitPane) root.lookup("#splitPane");
-        this.serverTreeView = (TreeView<Object>) splitPane.getItems().stream().filter(item -> "serverTreeView".equals(item.getId())).findFirst().orElseThrow(() -> new RuntimeException("id='serverTreeView' not fund"));
+        this.root = root;
+        this.serverTreeView = NodeUtils.lookup(root, "#serverTreeView");
     }
 
     @Override
     public void create() {
         connectionDialog().showAndWait().ifPresent(property -> {
-            RedisServerItem serverItem = new RedisServerItem(property, new RedisServerItemActionEventHandler(getParent()));
+            RedisServerItem serverItem = new RedisServerItem(property, new RedisServerItemActionEventHandler(this.root));
             serverItem.setExpanded(false);
             serverTreeView.getRoot().getChildren().add(serverItem);
         });
