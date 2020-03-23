@@ -2,12 +2,11 @@ package com.jean.redis.client.view.handler.impl;
 
 import com.jean.redis.client.dialog.CreateRedisServerDialog;
 import com.jean.redis.client.model.RedisServerProperty;
-import com.jean.redis.client.util.NodeUtils;
+import com.jean.redis.client.util.ViewUtils;
 import com.jean.redis.client.view.RedisRootItem;
 import com.jean.redis.client.view.RedisServerItem;
 import com.jean.redis.client.view.handler.IRedisRootItemActionEventHandler;
 import com.jean.redis.client.view.handler.IRedisServerItemActionEventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.TreeView;
 
 /**
@@ -18,9 +17,9 @@ public class RedisRootItemActionEventHandler implements IRedisRootItemActionEven
     private final TreeView<Object> serverTreeView;
     private final IRedisServerItemActionEventHandler redisServerItemActionEventHandler;
 
-    public RedisRootItemActionEventHandler(Node root) {
-        this.serverTreeView = NodeUtils.lookup(root, "#serverTreeView");
-        this.redisServerItemActionEventHandler = new RedisServerItemActionEventHandler(root);
+    public RedisRootItemActionEventHandler() {
+        this.serverTreeView = ViewUtils.getInstance().getServerTreeView();
+        this.redisServerItemActionEventHandler = new RedisServerItemActionEventHandler();
     }
 
     @Override

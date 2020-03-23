@@ -1,7 +1,11 @@
 package com.jean.redis.client;
 
+import com.jean.redis.client.constant.CommonConstant;
+import com.jean.redis.client.factory.ControllerFactory;
+import com.jean.redis.client.mange.TaskManger;
 import com.jean.redis.client.util.ResourceLoader;
 import com.jean.redis.client.util.StringUtils;
+import io.lettuce.core.AbstractRedisClient;
 import javafx.application.Application;
 import javafx.application.Preloader;
 import javafx.fxml.FXMLLoader;
@@ -11,6 +15,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,21 +44,14 @@ public class MainApplication extends Application {
         //启动参数
         params = getParameters().getRaw();
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_INIT, this));
-        bundle = ResourceBundle.getBundle("local", Locale.SIMPLIFIED_CHINESE, new EncodingResourceBundleControl());
+        bundle = ResourceBundle.getBundle("local", Locale.getDefault(), new EncodingResourceBundleControl());
     }
 
     @Override
     public void start(Stage stage) throws Exception {
         notifyPreloader(new Preloader.StateChangeNotification(Preloader.StateChangeNotification.Type.BEFORE_START, this));
-        FXMLLoader loader = new FXMLLoader(ResourceLoader.load("/fxml/Scene.fxml"), bundle, null, param -> {
-            try {
-                Object instance = param.newInstance();
-                controllers.put(param, instance);
-                return instance;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+        URL resource = getClass().getResource("/fxml/Scene.fxml");
+        FXMLLoader loader = new FXMLLoader(resource, bundle, null, new ControllerFactory());
         Parent root = loader.load();
         Scene scene = new Scene(root);
         scene.getStylesheets().add("/styles/Styles.css");
@@ -81,15 +79,9 @@ public class MainApplication extends Application {
 
     @Override
     public void stop() throws Exception {
-        controllers.values().forEach(value -> {
-            if (value instanceof AutoCloseable) {
-                try {
-                    ((AutoCloseable) value).close();
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-        });
+        CommonConstant.GLOBAL_REDIS_CONNECTION_POOL_CACHE.values().forEach(ObjectPool::close);
+        CommonConstant.GLOBAL_REDIS_CLIENT_CACHE.values().forEach(AbstractRedisClient::shutdownAsync);
+        TaskManger.getInstance().shutdown();
     }
 
     /**

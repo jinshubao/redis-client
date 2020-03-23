@@ -1,6 +1,7 @@
 package com.jean.redis.client.view.handler.impl;
 
 import com.jean.redis.client.constant.CommonConstant;
+import com.jean.redis.client.controller.MainController;
 import com.jean.redis.client.dialog.RedisServerInfoDialog;
 import com.jean.redis.client.mange.TaskManger;
 import com.jean.redis.client.model.RedisKey;
@@ -9,7 +10,7 @@ import com.jean.redis.client.model.RedisServerProperty;
 import com.jean.redis.client.model.RedisValue;
 import com.jean.redis.client.task.BaseTask;
 import com.jean.redis.client.task.RedisConnectionPoolTask;
-import com.jean.redis.client.util.NodeUtils;
+import com.jean.redis.client.util.ViewUtils;
 import com.jean.redis.client.view.RedisDatabaseItem;
 import com.jean.redis.client.view.RedisServerItem;
 import com.jean.redis.client.view.handler.IRedisDatabaseItemActionEventHandler;
@@ -18,7 +19,6 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import javafx.event.WeakEventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -36,11 +36,11 @@ public class RedisServerItemActionEventHandler implements IRedisServerItemAction
     private final EventHandler<WorkerStateEvent> serverInfoWorkerStateEventHandler;
     private final IRedisDatabaseItemActionEventHandler redisDatabaseItemActionEventHandler;
 
-    public RedisServerItemActionEventHandler(Node root) {
-        this.keyTableView = NodeUtils.lookup(root, "#keyTableView");
-        this.valueTableView = NodeUtils.lookup(root, "#valueTableView");
-        this.keyTextFiled = NodeUtils.lookup(root, "#keyTextFiled");
-        this.valueTextArea = NodeUtils.lookup(root, "#valueTextArea");
+    public RedisServerItemActionEventHandler() {
+        this.keyTableView = ViewUtils.getInstance().getKeyTableView();
+        this.valueTableView = ViewUtils.getInstance().getValueTableView();
+        this.keyTextFiled = ViewUtils.getInstance().getKeyTextFiled();
+        this.valueTextArea = ViewUtils.getInstance().getValueTextArea();
 
         this.serverInfoWorkerStateEventHandler = event -> {
             if (event.getEventType() == WorkerStateEvent.WORKER_STATE_SCHEDULED) {
@@ -49,7 +49,7 @@ public class RedisServerItemActionEventHandler implements IRedisServerItemAction
                 dialog.show();
             }
         };
-        this.redisDatabaseItemActionEventHandler = new RedisDatabaseItemActionEventHandlerImpl(root);
+        this.redisDatabaseItemActionEventHandler = new RedisDatabaseItemActionEventHandlerImpl();
     }
 
     @Override

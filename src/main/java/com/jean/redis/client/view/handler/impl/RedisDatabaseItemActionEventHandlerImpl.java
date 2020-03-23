@@ -4,16 +4,14 @@ import com.jean.redis.client.mange.TaskManger;
 import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisServerProperty;
 import com.jean.redis.client.task.RedisKeysTask;
-import com.jean.redis.client.util.NodeUtils;
+import com.jean.redis.client.util.ViewUtils;
 import com.jean.redis.client.view.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.view.RedisDatabaseItem;
 import com.jean.redis.client.view.handler.IRedisDatabaseItemActionEventHandler;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import javafx.event.WeakEventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
@@ -35,15 +33,15 @@ public class RedisDatabaseItemActionEventHandlerImpl implements IRedisDatabaseIt
     private final EventHandler<WorkerStateEvent> eventEventHandler;
 
     @SuppressWarnings("unchecked")
-    public RedisDatabaseItemActionEventHandlerImpl(Node root) {
+    public RedisDatabaseItemActionEventHandlerImpl() {
 
-        this.keyTableView = NodeUtils.lookup(root, "#keyTableView");
-        this.keyNoColumn = NodeUtils.lookup(this.keyTableView, "keyNoColumn");
-        this.keyColumn = NodeUtils.lookup(this.keyTableView, "keyColumn");
-        this.typeColumn = NodeUtils.lookup(this.keyTableView, "typeColumn");
-        this.sizeColumn = NodeUtils.lookup(this.keyTableView, "sizeColumn");
-        this.ttlColumn = NodeUtils.lookup(this.keyTableView, "ttlColumn");
-        this.serverInfoLabel = NodeUtils.lookup(root, "#serverInfoLabel");
+        this.keyTableView = ViewUtils.getInstance().getKeyTableView();
+        this.keyNoColumn = ViewUtils.getInstance().getKeyNoColumn();
+        this.keyColumn = ViewUtils.getInstance().getKeyColumn();
+        this.typeColumn = ViewUtils.getInstance().getTypeColumn();
+        this.sizeColumn = ViewUtils.getInstance().getSizeColumn();
+        this.ttlColumn = ViewUtils.getInstance().getTtlColumn();
+        this.serverInfoLabel = ViewUtils.getInstance().getServerInfoLabel();
 
         this.eventEventHandler = event -> {
             ProgressIndicatorPlaceholder keyProgressIndicator = (ProgressIndicatorPlaceholder) keyTableView.getPlaceholder();

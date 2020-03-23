@@ -6,16 +6,14 @@ import com.jean.redis.client.model.RedisKey;
 import com.jean.redis.client.model.RedisValue;
 import com.jean.redis.client.model.RedisValueWrapper;
 import com.jean.redis.client.task.RedisValueTask;
-import com.jean.redis.client.util.NodeUtils;
 import com.jean.redis.client.util.StringUtils;
+import com.jean.redis.client.util.ViewUtils;
 import com.jean.redis.client.view.ProgressIndicatorPlaceholder;
 import com.jean.redis.client.view.handler.IRedisKeyActionEventHandler;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import javafx.event.WeakEventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
 
 /**
  * @author jinshubao
@@ -32,19 +30,19 @@ public class RedisKeyActionEventHandlerImpl implements IRedisKeyActionEventHandl
     private final TextArea valueTextArea;
     private final EventHandler<WorkerStateEvent> valueTaskWorkerStateEventHandler;
 
-    public RedisKeyActionEventHandlerImpl(Node root) {
-        this.keyTableView = NodeUtils.lookup(root, "#keyTableView");
-        this.valueTableView = NodeUtils.lookup(root, "#valueTableView");
+    public RedisKeyActionEventHandlerImpl() {
+        this.keyTableView = ViewUtils.getInstance().getKeyTableView();
+        this.valueTableView = ViewUtils.getInstance().getValueTableView();
 
-        this.valueNoColumn = NodeUtils.lookup(valueTableView, "valueNoColumn");
-        this.valueKeyColumn = NodeUtils.lookup(valueTableView, "valueKeyColumn");
-        this.valueColumn = NodeUtils.lookup(valueTableView, "valueColumn");
-        this.valueScoreColumn = NodeUtils.lookup(valueTableView, "valueScoreColumn");
+        this.valueNoColumn = ViewUtils.getInstance().getValueNoColumn();
+        this.valueKeyColumn = ViewUtils.getInstance().getValueKeyColumn();
+        this.valueColumn = ViewUtils.getInstance().getValueColumn();
+        this.valueScoreColumn = ViewUtils.getInstance().getValueScoreColumn();
 
-        this.keyTextFiled = NodeUtils.lookup(root, "#keyTextFiled");
-        this.valueTextArea = NodeUtils.lookup(root, "#valueTextArea");
+        this.keyTextFiled = ViewUtils.getInstance().getKeyTextFiled();
+        this.valueTextArea = ViewUtils.getInstance().getValueTextArea();
 
-        SplitPane valueSplitPane = NodeUtils.lookup(root, "#valueSplitPane");
+        SplitPane valueSplitPane = ViewUtils.getInstance().getValueSplitPane();
 
         //redis getValue task success event handler
         this.valueTaskWorkerStateEventHandler = event -> {

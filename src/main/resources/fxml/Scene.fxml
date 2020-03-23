@@ -24,7 +24,7 @@
         <VBox>
             <MenuBar BorderPane.alignment="CENTER">
                 <Menu mnemonicParsing="false" text="文件">
-                    <MenuItem fx:id="exit" mnemonicParsing="false" text="退出" />
+                    <MenuItem fx:id="exitMenuItem" mnemonicParsing="false" text="退出" />
                 </Menu>
                 <Menu mnemonicParsing="false" text="帮助">
                     <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="关于" />
